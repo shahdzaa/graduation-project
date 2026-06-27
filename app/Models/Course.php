@@ -15,7 +15,15 @@ class Course extends Model
         'duration_minutes',
         'level_id',
         'type_id',
+        'domain_id',
+        'category_id',
+        'thumbnail',
+        'price',
+        'is_free',
+        'language',
+        'is_published',
         'description',
+        'schedule',
         'average_rating',
     ];
 
@@ -27,6 +35,16 @@ class Course extends Model
     public function type(): BelongsTo
     {
         return $this->belongsTo(CourseType::class);
+    }
+
+    public function domain(): BelongsTo
+    {
+        return $this->belongsTo(Domain::class);
+    }
+
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
     }
 
     public function prerequisites(): BelongsToMany
@@ -62,11 +80,6 @@ class Course extends Model
     public function instructors(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'course_instructors');
-    }
-
-    public function categories(): BelongsToMany
-    {
-        return $this->belongsToMany(Category::class, 'course_categories');
     }
 
     public function certificates(): HasMany

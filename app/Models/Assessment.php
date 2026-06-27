@@ -8,11 +8,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Assessment extends Model
 {
-    protected $fillable = ['name', 'description', 'associated_domain_id'];
+    protected $fillable = ['name', 'description', 'domain_id'];
 
     public function domain(): BelongsTo
     {
-        return $this->belongsTo(Domain::class, 'associated_domain_id');
+        return $this->belongsTo(Domain::class);
     }
 
     public function questions(): HasMany

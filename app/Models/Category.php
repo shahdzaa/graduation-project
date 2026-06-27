@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Category extends Model
@@ -33,8 +32,8 @@ class Category extends Model
         return $this->belongsTo(Domain::class);
     }
 
-    public function courses(): BelongsToMany
+    public function courses(): HasMany
     {
-        return $this->belongsToMany(Course::class, 'course_categories');
+        return $this->hasMany(Course::class);
     }
 }

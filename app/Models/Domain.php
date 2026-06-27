@@ -11,7 +11,12 @@ class Domain extends Model
 
     public function assessments(): HasMany
     {
-        return $this->hasMany(Assessment::class, 'associated_domain_id');
+        return $this->hasMany(Assessment::class);
+    }
+
+    public function courses(): HasMany
+    {
+        return $this->hasMany(Course::class);
     }
 
     public function aptitudeMappings(): HasMany

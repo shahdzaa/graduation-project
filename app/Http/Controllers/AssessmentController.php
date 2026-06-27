@@ -25,7 +25,7 @@ class AssessmentController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:250',
             'description' => 'nullable|string',
-            'associated_domain_id' => 'required|exists:domains,id',
+            'domain_id' => 'required|exists:domains,id',
         ]);
 
         $assessment = Assessment::create($validated);
@@ -48,7 +48,7 @@ class AssessmentController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:250',
             'description' => 'nullable|string',
-            'associated_domain_id' => 'required|exists:domains,id',
+            'domain_id' => 'required|exists:domains,id',
         ]);
 
         $assessment->update($validated);

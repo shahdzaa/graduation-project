@@ -10,7 +10,7 @@ class DomainController extends Controller
 {
     public function index(): JsonResponse
     {
-        return response()->json(Domain::with(['assessments', 'aptitudeMappings', 'categories'])->get());
+        return response()->json(Domain::with(['assessments', 'aptitudeMappings', 'categories.courses', 'courses'])->get());
     }
 
     public function store(Request $request): JsonResponse
@@ -26,7 +26,7 @@ class DomainController extends Controller
 
     public function show(Domain $domain): JsonResponse
     {
-        return response()->json($domain->load(['assessments', 'aptitudeMappings', 'categories']));
+        return response()->json($domain->load(['assessments', 'aptitudeMappings', 'categories.courses', 'courses']));
     }
 
     public function update(Request $request, Domain $domain): JsonResponse

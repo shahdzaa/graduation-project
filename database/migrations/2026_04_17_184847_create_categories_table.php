@@ -22,10 +22,11 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('course_categories', function (Blueprint $table) {
-            $table->foreignId('course_id')->constrained('courses')->cascadeOnDelete();
-            $table->foreignId('category_id')->constrained('categories')->cascadeOnDelete();
-            $table->primary(['course_id', 'category_id']);
+        Schema::table('courses', function (Blueprint $table) {
+            $table->foreignId('category_id')
+                ->nullable()
+                ->constrained('categories')
+                ->nullOnDelete();
         });
     }
 
@@ -34,6 +35,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::table('courses', function (Blueprint $table) {
+            $table->dropConstrainedForeignId('category_id');
+        });
+
         Schema::dropIfExists('categories');
     }
 };

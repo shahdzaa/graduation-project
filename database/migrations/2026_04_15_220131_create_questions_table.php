@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('assessment_id')->constrained('assessments')->cascadeOnDelete();
             $table->foreignId('syllabi_id')->constrained('syllabus')->cascadeOnDelete();
             $table->text('text');
+            $table->string('question_type', 50)->default('single_choice');
             $table->timestamps();
         });
     }

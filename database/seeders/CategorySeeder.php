@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class CategorySeeder extends Seeder
 {
@@ -97,5 +98,26 @@ class CategorySeeder extends Seeder
 
         // إدراج الفئات في قاعدة البيانات
         DB::table('categories')->upsert($categories, ['slug'], ['name', 'domain_id', 'icon', 'order_index', 'parent_id', 'updated_at']);
+
+        if (! Schema::hasColumn('courses', 'category_id')) {
+            return;
+        }
+
+        $defaultCategories = DB::table('categories')
+            ->whereNotNull('domain_id')
+            ->orderBy('order_index')
+            ->get()
+            ->groupBy('domain_id')
+            ->map(fn ($categories) => $categories->first()->id);
+
+        foreach ($defaultCategories as $domainId => $categoryId) {
+            DB::table('courses')
+                ->where('domain_id', $domainId)
+                ->whereNull('category_id')
+                ->update([
+                    'category_id' => $categoryId,
+                    'updated_at' => $now,
+                ]);
+        }
     }
 }

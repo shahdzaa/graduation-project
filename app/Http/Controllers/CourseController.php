@@ -13,7 +13,7 @@ class CourseController extends Controller
      */
     public function index(): JsonResponse
     {
-        $courses = Course::with(['level', 'type', 'modules', 'reviews', 'skills', 'organizations', 'instructors', 'categories', 'certificates'])->get();
+        $courses = Course::with(['level', 'type', 'domain', 'category', 'modules', 'reviews', 'skills', 'organizations', 'instructors', 'certificates'])->get();
         return response()->json($courses);
     }
 
@@ -28,11 +28,20 @@ class CourseController extends Controller
             'duration_minutes' => 'required|integer',
             'level_id' => 'required|exists:course_levels,id',
             'type_id' => 'required|exists:course_types,id',
+            'domain_id' => 'required|exists:domains,id',
+            'category_id' => 'nullable|exists:categories,id',
+            'thumbnail' => 'nullable|string|max:255',
+            'price' => 'nullable|numeric|min:0',
+            'is_free' => 'boolean',
+            'language' => 'nullable|string|max:10',
+            'is_published' => 'boolean',
             'description' => 'nullable|string',
+            'schedule' => 'nullable|string',
+            'average_rating' => 'numeric|min:0|max:5',
         ]);
 
         $course = Course::create($validated);
-        return response()->json($course->load(['level', 'type']), 201);
+        return response()->json($course->load(['level', 'type', 'domain', 'category']), 201);
     }
 
     /**
@@ -40,7 +49,7 @@ class CourseController extends Controller
      */
     public function show(Course $course): JsonResponse
     {
-        return response()->json($course->load(['level', 'type', 'modules', 'reviews', 'skills', 'organizations', 'instructors', 'categories', 'certificates']));
+        return response()->json($course->load(['level', 'type', 'domain', 'category', 'modules', 'reviews', 'skills', 'organizations', 'instructors', 'certificates']));
     }
 
     /**
@@ -54,12 +63,20 @@ class CourseController extends Controller
             'duration_minutes' => 'required|integer',
             'level_id' => 'required|exists:course_levels,id',
             'type_id' => 'required|exists:course_types,id',
+            'domain_id' => 'required|exists:domains,id',
+            'category_id' => 'nullable|exists:categories,id',
+            'thumbnail' => 'nullable|string|max:255',
+            'price' => 'nullable|numeric|min:0',
+            'is_free' => 'boolean',
+            'language' => 'nullable|string|max:10',
+            'is_published' => 'boolean',
             'description' => 'nullable|string',
+            'schedule' => 'nullable|string',
             'average_rating' => 'numeric|min:0|max:5',
         ]);
 
         $course->update($validated);
-        return response()->json($course->load(['level', 'type']));
+        return response()->json($course->load(['level', 'type', 'domain', 'category']));
     }
 
     /**

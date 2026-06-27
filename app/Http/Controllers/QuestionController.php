@@ -13,7 +13,7 @@ class QuestionController extends Controller
      */
     public function index(): JsonResponse
     {
-        $questions = Question::with(['assessment', 'answerOptions', 'userAnswers'])->get();
+        $questions = Question::with(['assessment', 'syllabus', 'answerOptions', 'userAnswers'])->get();
         return response()->json($questions);
     }
 
@@ -24,12 +24,13 @@ class QuestionController extends Controller
     {
         $validated = $request->validate([
             'assessment_id' => 'required|exists:assessments,id',
+            'syllabi_id' => 'required|exists:syllabus,id',
             'text' => 'required|string',
             'question_type' => 'required|string|max:50',
         ]);
 
         $question = Question::create($validated);
-        return response()->json($question->load('assessment'), 201);
+        return response()->json($question->load(['assessment', 'syllabus']), 201);
     }
 
     /**
@@ -37,7 +38,7 @@ class QuestionController extends Controller
      */
     public function show(Question $question): JsonResponse
     {
-        return response()->json($question->load(['assessment', 'answerOptions', 'userAnswers']));
+        return response()->json($question->load(['assessment', 'syllabus', 'answerOptions', 'userAnswers']));
     }
 
     /**
@@ -47,12 +48,13 @@ class QuestionController extends Controller
     {
         $validated = $request->validate([
             'assessment_id' => 'required|exists:assessments,id',
+            'syllabi_id' => 'required|exists:syllabus,id',
             'text' => 'required|string',
             'question_type' => 'required|string|max:50',
         ]);
 
         $question->update($validated);
-        return response()->json($question->load('assessment'));
+        return response()->json($question->load(['assessment', 'syllabus']));
     }
 
     /**

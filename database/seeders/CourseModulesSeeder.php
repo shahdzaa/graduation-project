@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class CourseModulesSeeder extends Seeder
 {
@@ -78,6 +79,8 @@ class CourseModulesSeeder extends Seeder
 
         fclose($file);
 
+        $this->syncCourseSkills();
+
         $this->command->info("✅ Done! Inserted: {$inserted}, Skipped: {$skipped}");
     }
 
@@ -93,5 +96,29 @@ class CourseModulesSeeder extends Seeder
 
             DB::table('course_modules')->insert(array_values($unique));
         });
+    }
+
+    private function syncCourseSkills(): void
+    {
+        if (! Schema::hasTable('course_skills')) {
+            return;
+        }
+
+        DB::table('course_modules')
+            ->join('skills', 'skills.module_id', '=', 'course_modules.module_id')
+            ->select('course_modules.course_id', 'skills.id as skill_id')
+            ->orderBy('course_modules.course_id')
+            ->chunk(1000, function ($rows) {
+                $courseSkills = $rows
+                    ->map(fn ($row) => [
+                        'course_id' => $row->course_id,
+                        'skill_id' => $row->skill_id,
+                    ])
+                    ->unique(fn ($row) => $row['course_id'].'-'.$row['skill_id'])
+                    ->values()
+                    ->all();
+
+                DB::table('course_skills')->insertOrIgnore($courseSkills);
+            });
     }
 }

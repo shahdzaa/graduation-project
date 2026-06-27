@@ -8,7 +8,6 @@ use App\Http\Controllers\AssessmentController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CertificateController;
 use App\Http\Controllers\CourseController;
-use App\Http\Controllers\CourseCategoryController;
 use App\Http\Controllers\CourseInstructorController;
 use App\Http\Controllers\CourseLevelController;
 use App\Http\Controllers\CourseModuleController;
@@ -61,7 +60,6 @@ Route::apiResource('user-answers', UserAnswerController::class);
 Route::apiResource('recommendation-logs', RecommendationLogController::class);
 
 // Additional Resource Routes
-Route::apiResource('course-categories', CourseCategoryController::class);
 Route::apiResource('course-instructors', CourseInstructorController::class);
 Route::apiResource('course-levels', CourseLevelController::class);
 Route::apiResource('course-modules', CourseModuleController::class);
