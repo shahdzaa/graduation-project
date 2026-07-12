@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Question;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Http\Resources\QuestionResource;
 
 class QuestionController extends Controller
 {
@@ -14,7 +15,7 @@ class QuestionController extends Controller
     public function index(): JsonResponse
     {
         $questions = Question::with(['assessment', 'syllabus', 'answerOptions', 'userAnswers'])->get();
-        return response()->json($questions);
+        return QuestionResource::collection($questions)->response();
     }
 
     /**
@@ -30,7 +31,7 @@ class QuestionController extends Controller
         ]);
 
         $question = Question::create($validated);
-        return response()->json($question->load(['assessment', 'syllabus']), 201);
+        return (new QuestionResource(question->load(['assessment', 'syllabus'])))->response()->setStatusCode(201);
     }
 
     /**
@@ -38,7 +39,7 @@ class QuestionController extends Controller
      */
     public function show(Question $question): JsonResponse
     {
-        return response()->json($question->load(['assessment', 'syllabus', 'answerOptions', 'userAnswers']));
+        return (new QuestionResource($question->load(['assessment', 'syllabus', 'answerOptions', 'userAnswers'])))->response();
     }
 
     /**
@@ -54,7 +55,7 @@ class QuestionController extends Controller
         ]);
 
         $question->update($validated);
-        return response()->json($question->load(['assessment', 'syllabus']));
+        return (new QuestionResource($question->load(['assessment', 'syllabus'])))->response();
     }
 
     /**

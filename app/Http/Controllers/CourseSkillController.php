@@ -5,12 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\CourseSkill;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Http\Resources\CourseSkillResource;
 
 class CourseSkillController extends Controller
 {
     public function index(): JsonResponse
     {
-        return response()->json(CourseSkill::with(['course', 'skill'])->get());
+        return CourseSkillResource::collection(CourseSkill::with(['course', 'skill'])->get())->response();
     }
 
     public function store(Request $request): JsonResponse
@@ -20,12 +21,12 @@ class CourseSkillController extends Controller
             'skill_id' => 'required|exists:skills,id',
         ]);
         $courseSkill = CourseSkill::create($validated);
-        return response()->json($courseSkill->load(['course', 'skill']), 201);
+        return (new CourseSkillResource(courseSkill->load(['course', 'skill'])))->response()->setStatusCode(201);
     }
 
     public function show(CourseSkill $courseSkill): JsonResponse
     {
-        return response()->json($courseSkill->load(['course', 'skill']));
+        return (new CourseSkillResource($courseSkill->load(['course', 'skill'])))->response();
     }
 
     public function update(Request $request, CourseSkill $courseSkill): JsonResponse
@@ -35,7 +36,7 @@ class CourseSkillController extends Controller
             'skill_id' => 'required|exists:skills,id',
         ]);
         $courseSkill->update($validated);
-        return response()->json($courseSkill->load(['course', 'skill']));
+        return (new CourseSkillResource($courseSkill->load(['course', 'skill'])))->response();
     }
 
     public function destroy(CourseSkill $courseSkill): JsonResponse

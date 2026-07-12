@@ -5,12 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\CourseOrganization;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Http\Resources\CourseOrganizationResource;
 
 class CourseOrganizationController extends Controller
 {
     public function index(): JsonResponse
     {
-        return response()->json(CourseOrganization::with(['course', 'organization'])->get());
+        return CourseOrganizationResource::collection(CourseOrganization::with(['course', 'organization'])->get())->response();
     }
 
     public function store(Request $request): JsonResponse
@@ -20,12 +21,12 @@ class CourseOrganizationController extends Controller
             'organization_id' => 'required|exists:organizations,id',
         ]);
         $courseOrganization = CourseOrganization::create($validated);
-        return response()->json($courseOrganization->load(['course', 'organization']), 201);
+        return (new CourseOrganizationResource(courseOrganization->load(['course', 'organization'])))->response()->setStatusCode(201);
     }
 
     public function show(CourseOrganization $courseOrganization): JsonResponse
     {
-        return response()->json($courseOrganization->load(['course', 'organization']));
+        return (new CourseOrganizationResource($courseOrganization->load(['course', 'organization'])))->response();
     }
 
     public function update(Request $request, CourseOrganization $courseOrganization): JsonResponse
@@ -35,7 +36,7 @@ class CourseOrganizationController extends Controller
             'organization_id' => 'required|exists:organizations,id',
         ]);
         $courseOrganization->update($validated);
-        return response()->json($courseOrganization->load(['course', 'organization']));
+        return (new CourseOrganizationResource($courseOrganization->load(['course', 'organization'])))->response();
     }
 
     public function destroy(CourseOrganization $courseOrganization): JsonResponse

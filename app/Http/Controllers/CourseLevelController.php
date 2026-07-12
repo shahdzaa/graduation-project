@@ -5,31 +5,32 @@ namespace App\Http\Controllers;
 use App\Models\CourseLevel;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Http\Resources\CourseLevelResource;
 
 class CourseLevelController extends Controller
 {
     public function index(): JsonResponse
     {
-        return response()->json(CourseLevel::with('courses')->get());
+        return CourseLevelResource::collection(CourseLevel::get())->response();
     }
 
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate(['name' => 'required|string|max:50']);
         $level = CourseLevel::create($validated);
-        return response()->json($level, 201);
+        return (new CourseLevelResource($level))->response()->setStatusCode(201);
     }
 
     public function show(CourseLevel $courseLevel): JsonResponse
     {
-        return response()->json($courseLevel->load('courses'));
+        return (new CourseLevelResource($courseLevel->load('courses')))->response();
     }
 
     public function update(Request $request, CourseLevel $courseLevel): JsonResponse
     {
         $validated = $request->validate(['name' => 'required|string|max:50']);
         $courseLevel->update($validated);
-        return response()->json($courseLevel);
+        return (new CourseLevelResource($courseLevel))->response();
     }
 
     public function destroy(CourseLevel $courseLevel): JsonResponse

@@ -5,12 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\Syllabus;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Http\Resources\SyllabusResource;
 
 class SyllabusController extends Controller
 {
     public function index(): JsonResponse
     {
-        return response()->json(Syllabus::with(['module', 'type'])->get());
+        return SyllabusResource::collection(Syllabus::with(['module', 'type'])->get())->response();
     }
 
     public function store(Request $request): JsonResponse
@@ -22,12 +23,12 @@ class SyllabusController extends Controller
             'duration_minutes' => 'required|integer',
         ]);
         $syllabus = Syllabus::create($validated);
-        return response()->json($syllabus->load(['module', 'type']), 201);
+        return (new SyllabusResource(syllabus->load(['module', 'type'])))->response()->setStatusCode(201);
     }
 
     public function show(Syllabus $syllabus): JsonResponse
     {
-        return response()->json($syllabus->load(['module', 'type']));
+        return (new SyllabusResource($syllabus->load(['module', 'type'])))->response();
     }
 
     public function update(Request $request, Syllabus $syllabus): JsonResponse
@@ -39,7 +40,7 @@ class SyllabusController extends Controller
             'duration_minutes' => 'required|integer',
         ]);
         $syllabus->update($validated);
-        return response()->json($syllabus->load(['module', 'type']));
+        return (new SyllabusResource($syllabus->load(['module', 'type'])))->response();
     }
 
     public function destroy(Syllabus $syllabus): JsonResponse

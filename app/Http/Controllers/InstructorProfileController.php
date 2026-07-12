@@ -5,12 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\InstructorProfile;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Http\Resources\InstructorProfileResource;
 
 class InstructorProfileController extends Controller
 {
     public function index(): JsonResponse
     {
-        return response()->json(InstructorProfile::with(['user', 'courses'])->get());
+        return InstructorProfileResource::collection(InstructorProfile::with(['user', 'courses'])->get())->response();
     }
 
     public function store(Request $request): JsonResponse
@@ -23,12 +24,12 @@ class InstructorProfileController extends Controller
             'rating' => 'nullable|numeric|min:0|max:5',
         ]);
         $instructor = InstructorProfile::create($validated);
-        return response()->json($instructor->load(['user', 'courses']), 201);
+        return (new InstructorProfileResource(instructor->load(['user', 'courses'])))->response()->setStatusCode(201);
     }
 
     public function show(InstructorProfile $instructorProfile): JsonResponse
     {
-        return response()->json($instructorProfile->load(['user', 'courses']));
+        return (new InstructorProfileResource($instructorProfile->load(['user', 'courses'])))->response();
     }
 
     public function update(Request $request, InstructorProfile $instructorProfile): JsonResponse
@@ -41,7 +42,7 @@ class InstructorProfileController extends Controller
             'rating' => 'nullable|numeric|min:0|max:5',
         ]);
         $instructorProfile->update($validated);
-        return response()->json($instructorProfile->load(['user', 'courses']));
+        return (new InstructorProfileResource($instructorProfile->load(['user', 'courses'])))->response();
     }
 
     public function destroy(InstructorProfile $instructorProfile): JsonResponse

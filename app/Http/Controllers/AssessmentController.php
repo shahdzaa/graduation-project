@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Assessment;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Http\Resources\AssessmentResource;
 
 class AssessmentController extends Controller
 {
@@ -14,7 +15,7 @@ class AssessmentController extends Controller
     public function index(): JsonResponse
     {
         $assessments = Assessment::with(['domain', 'questions', 'testAttempts'])->get();
-        return response()->json($assessments);
+        return AssessmentResource::collection($assessments)->response();
     }
 
     /**
@@ -29,7 +30,7 @@ class AssessmentController extends Controller
         ]);
 
         $assessment = Assessment::create($validated);
-        return response()->json($assessment->load('domain'), 201);
+        return (new AssessmentResource(assessment->load('domain')))->response()->setStatusCode(201);
     }
 
     /**
@@ -37,7 +38,7 @@ class AssessmentController extends Controller
      */
     public function show(Assessment $assessment): JsonResponse
     {
-        return response()->json($assessment->load(['domain', 'questions', 'testAttempts']));
+        return (new AssessmentResource($assessment->load(['domain', 'questions', 'testAttempts'])))->response();
     }
 
     /**
@@ -52,7 +53,7 @@ class AssessmentController extends Controller
         ]);
 
         $assessment->update($validated);
-        return response()->json($assessment->load('domain'));
+        return (new AssessmentResource($assessment->load('domain')))->response();
     }
 
     /**

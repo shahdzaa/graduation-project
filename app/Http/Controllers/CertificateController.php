@@ -5,12 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\Certificate;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Http\Resources\CertificateResource;
 
 class CertificateController extends Controller
 {
     public function index(): JsonResponse
     {
-        return response()->json(Certificate::with(['user', 'course'])->get());
+        return CertificateResource::collection(Certificate::with(['user', 'course'])->get())->response();
     }
 
     public function store(Request $request): JsonResponse
@@ -24,12 +25,12 @@ class CertificateController extends Controller
         ]);
 
         $certificate = Certificate::create($validated);
-        return response()->json($certificate->load(['user', 'course']), 201);
+        return (new CertificateResource(certificate->load(['user', 'course'])))->response()->setStatusCode(201);
     }
 
     public function show(Certificate $certificate): JsonResponse
     {
-        return response()->json($certificate->load(['user', 'course']));
+        return (new CertificateResource($certificate->load(['user', 'course'])))->response();
     }
 
     public function update(Request $request, Certificate $certificate): JsonResponse
@@ -43,7 +44,7 @@ class CertificateController extends Controller
         ]);
 
         $certificate->update($validated);
-        return response()->json($certificate->load(['user', 'course']));
+        return (new CertificateResource($certificate->load(['user', 'course'])))->response();
     }
 
     public function destroy(Certificate $certificate): JsonResponse

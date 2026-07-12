@@ -5,12 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\Module;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Http\Resources\ModuleResource;
 
 class ModuleController extends Controller
 {
     public function index(): JsonResponse
     {
-        return response()->json(Module::with(['courses', 'syllabi'])->get());
+        return ModuleResource::collection(Module::with(['courses', 'syllabi'])->get())->response();
     }
 
     public function store(Request $request): JsonResponse
@@ -21,12 +22,12 @@ class ModuleController extends Controller
             'duration_minutes' => 'required|integer',
         ]);
         $module = Module::create($validated);
-        return response()->json($module, 201);
+        return (new ModuleResource($module))->response()->setStatusCode(201);
     }
 
     public function show(Module $module): JsonResponse
     {
-        return response()->json($module->load(['courses', 'syllabi']));
+        return (new ModuleResource($module->load(['courses', 'syllabi'])))->response();
     }
 
     public function update(Request $request, Module $module): JsonResponse
@@ -37,7 +38,7 @@ class ModuleController extends Controller
             'duration_minutes' => 'required|integer',
         ]);
         $module->update($validated);
-        return response()->json($module);
+        return (new ModuleResource($module))->response();
     }
 
     public function destroy(Module $module): JsonResponse

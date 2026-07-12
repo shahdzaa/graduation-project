@@ -5,12 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\AptitudeScoreMapping;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Http\Resources\AptitudeScoreMappingResource;
 
 class AptitudeScoreMappingController extends Controller
 {
     public function index(): JsonResponse
     {
-        return response()->json(AptitudeScoreMapping::with(['answerOption', 'domain', 'skill'])->get());
+        return AptitudeScoreMappingResource::collection(AptitudeScoreMapping::with(['answerOption', 'domain', 'skill'])->get())->response();
     }
 
     public function store(Request $request): JsonResponse
@@ -23,12 +24,12 @@ class AptitudeScoreMappingController extends Controller
         ]);
 
         $mapping = AptitudeScoreMapping::create($validated);
-        return response()->json($mapping->load(['answerOption', 'domain', 'skill']), 201);
+        return (new AptitudeScoreMappingResource(mapping->load(['answerOption', 'domain', 'skill'])))->response()->setStatusCode(201);
     }
 
     public function show(AptitudeScoreMapping $aptitudeScoreMapping): JsonResponse
     {
-        return response()->json($aptitudeScoreMapping->load(['answerOption', 'domain', 'skill']));
+        return (new AptitudeScoreMappingResource($aptitudeScoreMapping->load(['answerOption', 'domain', 'skill'])))->response();
     }
 
     public function update(Request $request, AptitudeScoreMapping $aptitudeScoreMapping): JsonResponse
@@ -41,7 +42,7 @@ class AptitudeScoreMappingController extends Controller
         ]);
 
         $aptitudeScoreMapping->update($validated);
-        return response()->json($aptitudeScoreMapping->load(['answerOption', 'domain', 'skill']));
+        return (new AptitudeScoreMappingResource($aptitudeScoreMapping->load(['answerOption', 'domain', 'skill'])))->response();
     }
 
     public function destroy(AptitudeScoreMapping $aptitudeScoreMapping): JsonResponse

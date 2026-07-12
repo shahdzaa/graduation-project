@@ -5,12 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Http\Resources\NotificationResource;
 
 class NotificationController extends Controller
 {
     public function index(): JsonResponse
     {
-        return response()->json(Notification::with('user')->get());
+        return NotificationResource::collection(Notification::with('user')->get())->response();
     }
 
     public function store(Request $request): JsonResponse
@@ -24,12 +25,12 @@ class NotificationController extends Controller
         ]);
 
         $notification = Notification::create($validated);
-        return response()->json($notification->load('user'), 201);
+        return (new NotificationResource(notification->load('user')))->response()->setStatusCode(201);
     }
 
     public function show(Notification $notification): JsonResponse
     {
-        return response()->json($notification->load('user'));
+        return (new NotificationResource($notification->load('user')))->response();
     }
 
     public function update(Request $request, Notification $notification): JsonResponse
@@ -44,7 +45,7 @@ class NotificationController extends Controller
         ]);
 
         $notification->update($validated);
-        return response()->json($notification->load('user'));
+        return (new NotificationResource($notification->load('user')))->response();
     }
 
     public function destroy(Notification $notification): JsonResponse

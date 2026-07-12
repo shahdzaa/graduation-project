@@ -5,12 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\UserAnswer;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Http\Resources\UserAnswerResource;
 
 class UserAnswerController extends Controller
 {
     public function index(): JsonResponse
     {
-        return response()->json(UserAnswer::with(['attempt', 'question', 'selectedOption'])->get());
+        return UserAnswerResource::collection(UserAnswer::with(['attempt', 'question', 'selectedOption'])->get())->response();
     }
 
     public function store(Request $request): JsonResponse
@@ -22,12 +23,12 @@ class UserAnswerController extends Controller
         ]);
 
         $answer = UserAnswer::create($validated);
-        return response()->json($answer->load(['attempt', 'question', 'selectedOption']), 201);
+        return (new UserAnswerResource(answer->load(['attempt', 'question', 'selectedOption'])))->response()->setStatusCode(201);
     }
 
     public function show(UserAnswer $userAnswer): JsonResponse
     {
-        return response()->json($userAnswer->load(['attempt', 'question', 'selectedOption']));
+        return (new UserAnswerResource($userAnswer->load(['attempt', 'question', 'selectedOption'])))->response();
     }
 
     public function update(Request $request, UserAnswer $userAnswer): JsonResponse
@@ -39,7 +40,7 @@ class UserAnswerController extends Controller
         ]);
 
         $userAnswer->update($validated);
-        return response()->json($userAnswer->load(['attempt', 'question', 'selectedOption']));
+        return (new UserAnswerResource($userAnswer->load(['attempt', 'question', 'selectedOption'])))->response();
     }
 
     public function destroy(UserAnswer $userAnswer): JsonResponse

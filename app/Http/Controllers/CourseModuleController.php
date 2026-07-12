@@ -5,12 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\CourseModule;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Http\Resources\CourseModuleResource;
 
 class CourseModuleController extends Controller
 {
     public function index(): JsonResponse
     {
-        return response()->json(CourseModule::with(['course', 'module'])->get());
+        return CourseModuleResource::collection(CourseModule::with(['course', 'module'])->get())->response();
     }
 
     public function store(Request $request): JsonResponse
@@ -21,12 +22,12 @@ class CourseModuleController extends Controller
             'order' => 'required|integer',
         ]);
         $courseModule = CourseModule::create($validated);
-        return response()->json($courseModule->load(['course', 'module']), 201);
+        return (new CourseModuleResource(courseModule->load(['course', 'module'])))->response()->setStatusCode(201);
     }
 
     public function show(CourseModule $courseModule): JsonResponse
     {
-        return response()->json($courseModule->load(['course', 'module']));
+        return (new CourseModuleResource($courseModule->load(['course', 'module'])))->response();
     }
 
     public function update(Request $request, CourseModule $courseModule): JsonResponse
@@ -37,7 +38,7 @@ class CourseModuleController extends Controller
             'order' => 'required|integer',
         ]);
         $courseModule->update($validated);
-        return response()->json($courseModule->load(['course', 'module']));
+        return (new CourseModuleResource($courseModule->load(['course', 'module'])))->response();
     }
 
     public function destroy(CourseModule $courseModule): JsonResponse

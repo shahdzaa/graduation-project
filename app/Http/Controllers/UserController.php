@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
+use App\Http\Resources\UserResource;
 
 class UserController extends Controller
 {
@@ -15,7 +16,7 @@ class UserController extends Controller
     public function index(): JsonResponse
     {
         $users = User::with(['studentProfile', 'instructorProfile', 'studentCourses', 'courseReviews', 'testAttempts', 'recommendationLogs', 'notifications', 'certificates', 'taughtCourses', 'skillMatrix'])->get();
-        return response()->json($users);
+        return UserResource::collection($users)->response();
     }
 
     /**
@@ -35,7 +36,7 @@ class UserController extends Controller
         $validated['password'] = Hash::make($validated['password']);
 
         $user = User::create($validated);
-        return response()->json($user, 201);
+        return (new UserResource($user))->response()->setStatusCode(201);
     }
 
     /**
@@ -43,7 +44,7 @@ class UserController extends Controller
      */
     public function show(User $user): JsonResponse
     {
-        return response()->json($user->load(['studentProfile', 'instructorProfile', 'studentCourses', 'courseReviews', 'testAttempts', 'recommendationLogs', 'notifications', 'certificates', 'taughtCourses', 'skillMatrix']));
+        return (new UserResource($user->load(['studentProfile', 'instructorProfile', 'studentCourses', 'courseReviews', 'testAttempts', 'recommendationLogs', 'notifications', 'certificates', 'taughtCourses', 'skillMatrix'])))->response();
     }
 
     /**
@@ -67,7 +68,7 @@ class UserController extends Controller
         }
 
         $user->update($validated);
-        return response()->json($user);
+        return (new UserResource($user))->response();
     }
 
     /**

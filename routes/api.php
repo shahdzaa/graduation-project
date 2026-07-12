@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AIQuizController;
 use App\Http\Controllers\AnswerOptionController;
 use App\Http\Controllers\AptitudeScoreMappingController;
 use App\Http\Controllers\AssessmentController;
@@ -31,7 +32,7 @@ use App\Http\Controllers\SyllabusController;
 use App\Http\Controllers\SyllabusTypeController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserAnswerController;
-use App\Http\Controllers\UserTestAttemptController;
+use App\Http\Controllers\UserTestAttemptController; 
 
 /*
 |--------------------------------------------------------------------------
@@ -81,3 +82,4 @@ Route::apiResource('syllabi', SyllabusController::class);
 Route::apiResource('syllabus-types', SyllabusTypeController::class);
 Route::apiResource('certificates', CertificateController::class);
 Route::apiResource('aptitude-score-mappings', AptitudeScoreMappingController::class);
+Route::get('ai-quizzes/{courseId}', [AIQuizController::class, 'generateCourseQuiz']);

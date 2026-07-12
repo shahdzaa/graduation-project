@@ -5,12 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\AnswerOption;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Http\Resources\AnswerOptionResource;
 
 class AnswerOptionController extends Controller
 {
     public function index(): JsonResponse
     {
-        return response()->json(AnswerOption::with(['question', 'aptitudeMappings', 'userAnswers'])->get());
+        return AnswerOptionResource::collection(AnswerOption::with(['question', 'aptitudeMappings', 'userAnswers'])->get())->response();
     }
 
     public function store(Request $request): JsonResponse
@@ -22,12 +23,12 @@ class AnswerOptionController extends Controller
         ]);
 
         $option = AnswerOption::create($validated);
-        return response()->json($option->load('question'), 201);
+        return (new AnswerOptionResource(option->load('question')))->response()->setStatusCode(201);
     }
 
     public function show(AnswerOption $answerOption): JsonResponse
     {
-        return response()->json($answerOption->load(['question', 'aptitudeMappings', 'userAnswers']));
+        return (new AnswerOptionResource($answerOption->load(['question', 'aptitudeMappings', 'userAnswers'])))->response();
     }
 
     public function update(Request $request, AnswerOption $answerOption): JsonResponse
@@ -39,7 +40,7 @@ class AnswerOptionController extends Controller
         ]);
 
         $answerOption->update($validated);
-        return response()->json($answerOption->load('question'));
+        return (new AnswerOptionResource($answerOption->load('question')))->response();
     }
 
     public function destroy(AnswerOption $answerOption): JsonResponse

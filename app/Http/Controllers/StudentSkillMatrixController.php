@@ -5,12 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\StudentSkillMatrix;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Http\Resources\StudentSkillMatrixResource;
 
 class StudentSkillMatrixController extends Controller
 {
     public function index(): JsonResponse
     {
-        return response()->json(StudentSkillMatrix::with(['student', 'skill'])->get());
+        return StudentSkillMatrixResource::collection(StudentSkillMatrix::with(['student', 'skill'])->get())->response();
     }
 
     public function store(Request $request): JsonResponse
@@ -22,12 +23,12 @@ class StudentSkillMatrixController extends Controller
             'years_of_experience' => 'nullable|integer',
         ]);
         $skillMatrix = StudentSkillMatrix::create($validated);
-        return response()->json($skillMatrix->load(['student', 'skill']), 201);
+        return (new StudentSkillMatrixResource(skillMatrix->load(['student', 'skill'])))->response()->setStatusCode(201);
     }
 
     public function show(StudentSkillMatrix $studentSkillMatrix): JsonResponse
     {
-        return response()->json($studentSkillMatrix->load(['student', 'skill']));
+        return (new StudentSkillMatrixResource($studentSkillMatrix->load(['student', 'skill'])))->response();
     }
 
     public function update(Request $request, StudentSkillMatrix $studentSkillMatrix): JsonResponse
@@ -39,7 +40,7 @@ class StudentSkillMatrixController extends Controller
             'years_of_experience' => 'nullable|integer',
         ]);
         $studentSkillMatrix->update($validated);
-        return response()->json($studentSkillMatrix->load(['student', 'skill']));
+        return (new StudentSkillMatrixResource($studentSkillMatrix->load(['student', 'skill'])))->response();
     }
 
     public function destroy(StudentSkillMatrix $studentSkillMatrix): JsonResponse

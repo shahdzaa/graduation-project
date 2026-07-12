@@ -5,12 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\CourseReview;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Http\Resources\CourseReviewResource;
 
 class CourseReviewController extends Controller
 {
     public function index(): JsonResponse
     {
-        return response()->json(CourseReview::with(['course', 'student'])->get());
+        return CourseReviewResource::collection(CourseReview::with(['course', 'student'])->get())->response();
     }
 
     public function store(Request $request): JsonResponse
@@ -22,12 +23,12 @@ class CourseReviewController extends Controller
             'review_text' => 'nullable|string',
         ]);
         $review = CourseReview::create($validated);
-        return response()->json($review->load(['course', 'student']), 201);
+        return (new CourseReviewResource(review->load(['course', 'student'])))->response()->setStatusCode(201);
     }
 
     public function show(CourseReview $courseReview): JsonResponse
     {
-        return response()->json($courseReview->load(['course', 'student']));
+        return (new CourseReviewResource($courseReview->load(['course', 'student'])))->response();
     }
 
     public function update(Request $request, CourseReview $courseReview): JsonResponse
@@ -39,7 +40,7 @@ class CourseReviewController extends Controller
             'review_text' => 'nullable|string',
         ]);
         $courseReview->update($validated);
-        return response()->json($courseReview->load(['course', 'student']));
+        return (new CourseReviewResource($courseReview->load(['course', 'student'])))->response();
     }
 
     public function destroy(CourseReview $courseReview): JsonResponse

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Course;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Http\Resources\CourseResource;
 
 class CourseController extends Controller
 {
@@ -14,7 +15,7 @@ class CourseController extends Controller
     public function index(): JsonResponse
     {
         $courses = Course::with(['level', 'type', 'domain', 'category', 'modules', 'reviews', 'skills', 'organizations', 'instructors', 'certificates'])->get();
-        return response()->json($courses);
+        return CourseResource::collection($courses)->response();
     }
 
     /**
@@ -41,7 +42,7 @@ class CourseController extends Controller
         ]);
 
         $course = Course::create($validated);
-        return response()->json($course->load(['level', 'type', 'domain', 'category']), 201);
+        return (new CourseResource(course->load(['level', 'type', 'domain', 'category'])))->response()->setStatusCode(201);
     }
 
     /**
@@ -49,7 +50,7 @@ class CourseController extends Controller
      */
     public function show(Course $course): JsonResponse
     {
-        return response()->json($course->load(['level', 'type', 'domain', 'category', 'modules', 'reviews', 'skills', 'organizations', 'instructors', 'certificates']));
+        return (new CourseResource($course->load(['level', 'type', 'domain', 'category', 'modules', 'reviews', 'skills', 'organizations', 'instructors', 'certificates'])))->response();
     }
 
     /**
@@ -76,7 +77,7 @@ class CourseController extends Controller
         ]);
 
         $course->update($validated);
-        return response()->json($course->load(['level', 'type', 'domain', 'category']));
+        return (new CourseResource($course->load(['level', 'type', 'domain', 'category'])))->response();
     }
 
     /**

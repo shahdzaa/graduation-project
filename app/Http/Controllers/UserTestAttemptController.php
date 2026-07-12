@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\UserTestAttempt;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Http\Resources\UserTestAttemptResource;
 
 class UserTestAttemptController extends Controller
 {
@@ -14,7 +15,7 @@ class UserTestAttemptController extends Controller
     public function index(): JsonResponse
     {
         $attempts = UserTestAttempt::with(['user', 'assessment', 'userAnswers', 'recommendationLogs'])->get();
-        return response()->json($attempts);
+        return UserTestAttemptResource::collection($attempts)->response();
     }
 
     /**
@@ -31,7 +32,7 @@ class UserTestAttemptController extends Controller
         ]);
 
         $attempt = UserTestAttempt::create($validated);
-        return response()->json($attempt->load(['user', 'assessment']), 201);
+        return (new UserTestAttemptResource(attempt->load(['user', 'assessment'])))->response()->setStatusCode(201);
     }
 
     /**
@@ -39,7 +40,7 @@ class UserTestAttemptController extends Controller
      */
     public function show(UserTestAttempt $userTestAttempt): JsonResponse
     {
-        return response()->json($userTestAttempt->load(['user', 'assessment', 'userAnswers', 'recommendationLogs']));
+        return (new UserTestAttemptResource($userTestAttempt->load(['user', 'assessment', 'userAnswers', 'recommendationLogs'])))->response();
     }
 
     /**
@@ -56,7 +57,7 @@ class UserTestAttemptController extends Controller
         ]);
 
         $userTestAttempt->update($validated);
-        return response()->json($userTestAttempt->load(['user', 'assessment']));
+        return (new UserTestAttemptResource($userTestAttempt->load(['user', 'assessment'])))->response();
     }
 
     /**

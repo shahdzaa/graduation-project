@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\RecommendationLog;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Http\Resources\RecommendationLogResource;
 
 class RecommendationLogController extends Controller
 {
@@ -14,7 +15,7 @@ class RecommendationLogController extends Controller
     public function index(): JsonResponse
     {
         $logs = RecommendationLog::with(['user', 'attempt', 'recommendedCourse'])->get();
-        return response()->json($logs);
+        return RecommendationLogResource::collection($logs)->response();
     }
 
     /**
@@ -32,7 +33,7 @@ class RecommendationLogController extends Controller
         ]);
 
         $log = RecommendationLog::create($validated);
-        return response()->json($log->load(['user', 'attempt', 'recommendedCourse']), 201);
+        return (new RecommendationLogResource(log->load(['user', 'attempt', 'recommendedCourse'])))->response()->setStatusCode(201);
     }
 
     /**
@@ -40,7 +41,7 @@ class RecommendationLogController extends Controller
      */
     public function show(RecommendationLog $recommendationLog): JsonResponse
     {
-        return response()->json($recommendationLog->load(['user', 'attempt', 'recommendedCourse']));
+        return (new RecommendationLogResource($recommendationLog->load(['user', 'attempt', 'recommendedCourse'])))->response();
     }
 
     /**
@@ -58,7 +59,7 @@ class RecommendationLogController extends Controller
         ]);
 
         $recommendationLog->update($validated);
-        return response()->json($recommendationLog->load(['user', 'attempt', 'recommendedCourse']));
+        return (new RecommendationLogResource($recommendationLog->load(['user', 'attempt', 'recommendedCourse'])))->response();
     }
 
     /**

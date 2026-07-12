@@ -5,12 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\StudentProfile;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Http\Resources\StudentProfileResource;
 
 class StudentProfileController extends Controller
 {
     public function index(): JsonResponse
     {
-        return response()->json(StudentProfile::with(['user', 'courses', 'reviews', 'skillMatrices'])->get());
+        return StudentProfileResource::collection(StudentProfile::with(['user', 'courses', 'reviews', 'skillMatrices'])->get())->response();
     }
 
     public function store(Request $request): JsonResponse
@@ -23,12 +24,12 @@ class StudentProfileController extends Controller
             'learning_goals' => 'nullable|string',
         ]);
         $student = StudentProfile::create($validated);
-        return response()->json($student->load(['user', 'courses', 'reviews', 'skillMatrices']), 201);
+        return (new StudentProfileResource(student->load(['user', 'courses', 'reviews', 'skillMatrices'])))->response()->setStatusCode(201);
     }
 
     public function show(StudentProfile $studentProfile): JsonResponse
     {
-        return response()->json($studentProfile->load(['user', 'courses', 'reviews', 'skillMatrices']));
+        return (new StudentProfileResource($studentProfile->load(['user', 'courses', 'reviews', 'skillMatrices'])))->response();
     }
 
     public function update(Request $request, StudentProfile $studentProfile): JsonResponse
@@ -41,7 +42,7 @@ class StudentProfileController extends Controller
             'learning_goals' => 'nullable|string',
         ]);
         $studentProfile->update($validated);
-        return response()->json($studentProfile->load(['user', 'courses', 'reviews', 'skillMatrices']));
+        return (new StudentProfileResource($studentProfile->load(['user', 'courses', 'reviews', 'skillMatrices'])))->response();
     }
 
     public function destroy(StudentProfile $studentProfile): JsonResponse

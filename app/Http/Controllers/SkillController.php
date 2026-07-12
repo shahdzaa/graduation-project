@@ -5,31 +5,32 @@ namespace App\Http\Controllers;
 use App\Models\Skill;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Http\Resources\SkillResource;
 
 class SkillController extends Controller
 {
     public function index(): JsonResponse
     {
-        return response()->json(Skill::with(['courses', 'aptitudeMappings', 'studentSkillMatrices'])->get());
+        return SkillResource::collection(Skill::with(['courses', 'aptitudeMappings', 'studentSkillMatrices'])->get())->response();
     }
 
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate(['name' => 'required|string|max:250']);
         $skill = Skill::create($validated);
-        return response()->json($skill, 201);
+        return (new SkillResource($skill))->response()->setStatusCode(201);
     }
 
     public function show(Skill $skill): JsonResponse
     {
-        return response()->json($skill->load(['courses', 'aptitudeMappings', 'studentSkillMatrices']));
+        return (new SkillResource($skill->load(['courses', 'aptitudeMappings', 'studentSkillMatrices'])))->response();
     }
 
     public function update(Request $request, Skill $skill): JsonResponse
     {
         $validated = $request->validate(['name' => 'required|string|max:250']);
         $skill->update($validated);
-        return response()->json($skill);
+        return (new SkillResource($skill))->response();
     }
 
     public function destroy(Skill $skill): JsonResponse
