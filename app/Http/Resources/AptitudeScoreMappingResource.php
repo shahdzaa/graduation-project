@@ -7,13 +7,13 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class AptitudeScoreMappingResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
     public function toArray(Request $request): array
     {
-        return parent::toArray($request);
+        return [
+            'id' => $this->id,
+            'weight_score' => $this->weight_score,
+            'domain' => new DomainResource($this->whenLoaded('domain')),
+            'skill' => new SkillResource($this->whenLoaded('skill')),
+        ];
     }
 }

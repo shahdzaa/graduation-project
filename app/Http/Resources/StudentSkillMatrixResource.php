@@ -7,13 +7,12 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class StudentSkillMatrixResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
     public function toArray(Request $request): array
     {
-        return parent::toArray($request);
+        return [
+            'current_score' => $this->current_score,
+            'last_updated' => $this->last_updated,
+            'skill' => new SkillResource($this->whenLoaded('skill')),
+        ];
     }
 }

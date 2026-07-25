@@ -25,7 +25,7 @@ class CertificateController extends Controller
         ]);
 
         $certificate = Certificate::create($validated);
-        return (new CertificateResource(certificate->load(['user', 'course'])))->response()->setStatusCode(201);
+        return (new CertificateResource($certificate->load(['user', 'course'])))->response()->setStatusCode(201);
     }
 
     public function show(Certificate $certificate): JsonResponse

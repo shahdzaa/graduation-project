@@ -31,7 +31,7 @@ class QuestionController extends Controller
         ]);
 
         $question = Question::create($validated);
-        return (new QuestionResource(question->load(['assessment', 'syllabus'])))->response()->setStatusCode(201);
+        return (new QuestionResource($question->load(['assessment', 'syllabus'])))->response()->setStatusCode(201);
     }
 
     /**

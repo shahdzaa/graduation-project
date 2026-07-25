@@ -23,7 +23,7 @@ class CourseReviewController extends Controller
             'review_text' => 'nullable|string',
         ]);
         $review = CourseReview::create($validated);
-        return (new CourseReviewResource(review->load(['course', 'student'])))->response()->setStatusCode(201);
+        return (new CourseReviewResource($review->load(['course', 'student'])))->response()->setStatusCode(201);
     }
 
     public function show(CourseReview $courseReview): JsonResponse

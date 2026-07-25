@@ -21,7 +21,7 @@ class CourseOrganizationController extends Controller
             'organization_id' => 'required|exists:organizations,id',
         ]);
         $courseOrganization = CourseOrganization::create($validated);
-        return (new CourseOrganizationResource(courseOrganization->load(['course', 'organization'])))->response()->setStatusCode(201);
+        return (new CourseOrganizationResource($courseOrganization->load(['course', 'organization'])))->response()->setStatusCode(201);
     }
 
     public function show(CourseOrganization $courseOrganization): JsonResponse

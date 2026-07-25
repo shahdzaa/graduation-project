@@ -23,7 +23,7 @@ class SyllabusController extends Controller
             'duration_minutes' => 'required|integer',
         ]);
         $syllabus = Syllabus::create($validated);
-        return (new SyllabusResource(syllabus->load(['module', 'type'])))->response()->setStatusCode(201);
+        return (new SyllabusResource($syllabus->load(['module', 'type'])))->response()->setStatusCode(201);
     }
 
     public function show(Syllabus $syllabus): JsonResponse

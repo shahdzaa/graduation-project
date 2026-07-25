@@ -21,7 +21,7 @@ class CourseInstructorController extends Controller
             'instructor_id' => 'required|exists:instructor_profiles,id',
         ]);
         $courseInstructor = CourseInstructor::create($validated);
-        return (new CourseInstructorResource(courseInstructor->load(['course', 'instructor'])))->response()->setStatusCode(201);
+        return (new CourseInstructorResource($courseInstructor->load(['course', 'instructor'])))->response()->setStatusCode(201);
     }
 
     public function show(CourseInstructor $courseInstructor): JsonResponse

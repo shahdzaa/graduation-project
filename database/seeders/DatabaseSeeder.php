@@ -22,5 +22,8 @@ class DatabaseSeeder extends Seeder
     $this->state(fn (array $attributes) => [
         'role' => 'instructor',
     ]);
+    $this->call([
+    RoleSeeder::class,
+    ]);
 }
 }

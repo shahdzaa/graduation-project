@@ -23,7 +23,7 @@ class AnswerOptionController extends Controller
         ]);
 
         $option = AnswerOption::create($validated);
-        return (new AnswerOptionResource(option->load('question')))->response()->setStatusCode(201);
+        return (new AnswerOptionResource($option->load('question')))->response()->setStatusCode(201);
     }
 
     public function show(AnswerOption $answerOption): JsonResponse

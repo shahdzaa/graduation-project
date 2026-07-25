@@ -7,13 +7,15 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class StudentCourseResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
     public function toArray(Request $request): array
     {
-        return parent::toArray($request);
+        return [
+            'id' => $this->id,
+            'enrolled_at' => $this->enrolled_at,
+            'status' => $this->status,
+            'progress_percent' => $this->progress_percent,
+            'user' => new UserResource($this->whenLoaded('user')),
+            'course' => new CourseResource($this->whenLoaded('course')),
+        ];
     }
 }

@@ -24,7 +24,7 @@ class AptitudeScoreMappingController extends Controller
         ]);
 
         $mapping = AptitudeScoreMapping::create($validated);
-        return (new AptitudeScoreMappingResource(mapping->load(['answerOption', 'domain', 'skill'])))->response()->setStatusCode(201);
+        return (new AptitudeScoreMappingResource($mapping->load(['answerOption', 'domain', 'skill'])))->response()->setStatusCode(201);
     }
 
     public function show(AptitudeScoreMapping $aptitudeScoreMapping): JsonResponse

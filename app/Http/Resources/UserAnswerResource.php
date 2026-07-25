@@ -7,13 +7,12 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class UserAnswerResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
     public function toArray(Request $request): array
     {
-        return parent::toArray($request);
+        return [
+            'id' => $this->id,
+            'question' => new QuestionResource($this->whenLoaded('question')),
+            'selected_option' => new AnswerOptionResource($this->whenLoaded('selectedOption')),
+        ];
     }
 }

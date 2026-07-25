@@ -7,13 +7,15 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class QuestionResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
     public function toArray(Request $request): array
     {
-        return parent::toArray($request);
+        return [
+            'id' => $this->id,
+            'text' => $this->text,
+            'syllabus' => new SyllabusResource($this->whenLoaded('syllabus')),
+            // ملاحظة: لو الاختبار عم يتاخد حالياً، خفي is_correct بالـ Resource
+            // (فلترة الحقول الحساسة بتصير بالكونترولر عبر Resource تاني أو بشرط هون)
+            'answer_options' => AnswerOptionResource::collection($this->whenLoaded('answerOptions')),
+        ];
     }
 }

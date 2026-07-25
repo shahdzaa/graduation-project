@@ -24,7 +24,7 @@ class StudentProfileController extends Controller
             'learning_goals' => 'nullable|string',
         ]);
         $student = StudentProfile::create($validated);
-        return (new StudentProfileResource(student->load(['user', 'courses', 'reviews', 'skillMatrices'])))->response()->setStatusCode(201);
+        return (new StudentProfileResource($student->load(['user', 'courses', 'reviews', 'skillMatrices'])))->response()->setStatusCode(201);
     }
 
     public function show(StudentProfile $studentProfile): JsonResponse

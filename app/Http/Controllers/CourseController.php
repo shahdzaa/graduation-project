@@ -42,7 +42,7 @@ class CourseController extends Controller
         ]);
 
         $course = Course::create($validated);
-        return (new CourseResource(course->load(['level', 'type', 'domain', 'category'])))->response()->setStatusCode(201);
+        return (new CourseResource($course->load(['level', 'type', 'domain', 'category'])))->response()->setStatusCode(201);
     }
 
     /**
@@ -56,10 +56,12 @@ class CourseController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Course $course): JsonResponse
-    {
-        $validated = $request->validate([
-            'title' => 'required|string|max:250',
+public function update(Request $request, Course $course): JsonResponse
+{
+    $this->authorize('update', $course);
+
+    $validated = $request->validate([
+         'title' => 'required|string|max:250',
             'url' => 'required|string|max:1000',
             'duration_minutes' => 'required|integer',
             'level_id' => 'required|exists:course_levels,id',
@@ -74,18 +76,17 @@ class CourseController extends Controller
             'description' => 'nullable|string',
             'schedule' => 'nullable|string',
             'average_rating' => 'numeric|min:0|max:5',
-        ]);
+    ]);
 
-        $course->update($validated);
-        return (new CourseResource($course->load(['level', 'type', 'domain', 'category'])))->response();
-    }
+    $course->update($validated);
+    return (new CourseResource($course->load(['level', 'type', 'domain', 'category'])))->response();
+}
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Course $course): JsonResponse
-    {
-        $course->delete();
-        return response()->json(['message' => 'Course deleted successfully']);
-    }
+public function destroy(Course $course): JsonResponse
+{
+    $this->authorize('delete', $course);
+
+    $course->delete();
+    return response()->json(['message' => 'Course deleted successfully']);
+}
 }

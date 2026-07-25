@@ -23,7 +23,7 @@ class StudentSkillMatrixController extends Controller
             'years_of_experience' => 'nullable|integer',
         ]);
         $skillMatrix = StudentSkillMatrix::create($validated);
-        return (new StudentSkillMatrixResource(skillMatrix->load(['student', 'skill'])))->response()->setStatusCode(201);
+        return (new StudentSkillMatrixResource($skillMatrix->load(['student', 'skill'])))->response()->setStatusCode(201);
     }
 
     public function show(StudentSkillMatrix $studentSkillMatrix): JsonResponse

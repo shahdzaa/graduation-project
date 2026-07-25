@@ -25,7 +25,7 @@ class NotificationController extends Controller
         ]);
 
         $notification = Notification::create($validated);
-        return (new NotificationResource(notification->load('user')))->response()->setStatusCode(201);
+        return (new NotificationResource($notification->load('user')))->response()->setStatusCode(201);
     }
 
     public function show(Notification $notification): JsonResponse

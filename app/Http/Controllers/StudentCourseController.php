@@ -25,7 +25,7 @@ class StudentCourseController extends Controller
             'certificate_issued' => 'boolean',
         ]);
         $studentCourse = StudentCourse::create($validated);
-        return (new StudentCourseResource(studentCourse->load(['student', 'course'])))->response()->setStatusCode(201);
+        return (new StudentCourseResource($studentCourse->load(['student', 'course'])))->response()->setStatusCode(201);
     }
 
     public function show(StudentCourse $studentCourse): JsonResponse

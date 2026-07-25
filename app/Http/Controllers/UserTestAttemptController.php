@@ -32,7 +32,7 @@ class UserTestAttemptController extends Controller
         ]);
 
         $attempt = UserTestAttempt::create($validated);
-        return (new UserTestAttemptResource(attempt->load(['user', 'assessment'])))->response()->setStatusCode(201);
+        return (new UserTestAttemptResource($attempt->load(['user', 'assessment'])))->response()->setStatusCode(201);
     }
 
     /**

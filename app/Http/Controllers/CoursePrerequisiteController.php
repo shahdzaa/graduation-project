@@ -21,7 +21,7 @@ class CoursePrerequisiteController extends Controller
             'prerequisite_id' => 'required|exists:courses,id',
         ]);
         $coursePrerequisite = CoursePrerequisite::create($validated);
-        return (new CoursePrerequisiteResource(coursePrerequisite->load(['course', 'prerequisite'])))->response()->setStatusCode(201);
+        return (new CoursePrerequisiteResource($coursePrerequisite->load(['course', 'prerequisite'])))->response()->setStatusCode(201);
     }
 
     public function show(CoursePrerequisite $coursePrerequisite): JsonResponse

@@ -22,7 +22,7 @@ class CourseModuleController extends Controller
             'order' => 'required|integer',
         ]);
         $courseModule = CourseModule::create($validated);
-        return (new CourseModuleResource(courseModule->load(['course', 'module'])))->response()->setStatusCode(201);
+        return (new CourseModuleResource($courseModule->load(['course', 'module'])))->response()->setStatusCode(201);
     }
 
     public function show(CourseModule $courseModule): JsonResponse

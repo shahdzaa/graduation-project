@@ -21,7 +21,7 @@ class CourseSkillController extends Controller
             'skill_id' => 'required|exists:skills,id',
         ]);
         $courseSkill = CourseSkill::create($validated);
-        return (new CourseSkillResource(courseSkill->load(['course', 'skill'])))->response()->setStatusCode(201);
+        return (new CourseSkillResource($courseSkill->load(['course', 'skill'])))->response()->setStatusCode(201);
     }
 
     public function show(CourseSkill $courseSkill): JsonResponse

@@ -33,7 +33,7 @@ class CategoryController extends Controller
         ]);
 
         $category = Category::create($validated);
-        return (new CategoryResource(category->load(['parent', 'domain'])))->response()->setStatusCode(201);
+        return (new CategoryResource($category->load(['parent', 'domain'])))->response()->setStatusCode(201);
     }
 
     /**

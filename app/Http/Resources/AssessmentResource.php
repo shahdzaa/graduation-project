@@ -7,13 +7,13 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class AssessmentResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
     public function toArray(Request $request): array
     {
-        return parent::toArray($request);
+        return [
+            'id' => $this->id,
+            'description' => $this->description,
+            'domain' => new DomainResource($this->whenLoaded('domain')),
+            'questions' => QuestionResource::collection($this->whenLoaded('questions')),
+        ];
     }
 }

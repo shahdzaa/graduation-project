@@ -23,7 +23,7 @@ class UserAnswerController extends Controller
         ]);
 
         $answer = UserAnswer::create($validated);
-        return (new UserAnswerResource(answer->load(['attempt', 'question', 'selectedOption'])))->response()->setStatusCode(201);
+        return (new UserAnswerResource($answer->load(['attempt', 'question', 'selectedOption'])))->response()->setStatusCode(201);
     }
 
     public function show(UserAnswer $userAnswer): JsonResponse

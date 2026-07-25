@@ -11,9 +11,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
+use Laravel\Sanctum\HasApiTokens;
+
+
 
 class User extends Authenticatable
 {
+    use HasRoles;
+    use HasApiTokens;
+
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, SoftDeletes;
 
@@ -26,7 +33,6 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role',
         'avatar',
         'is_active',
     ];

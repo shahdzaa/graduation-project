@@ -33,6 +33,7 @@ use App\Http\Controllers\SyllabusTypeController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserAnswerController;
 use App\Http\Controllers\UserTestAttemptController; 
+use App\Http\Controllers\AuthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -48,11 +49,22 @@ use App\Http\Controllers\UserTestAttemptController;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
-
+Route::post('login', [AuthController::class, 'login']);
+Route::middleware('auth:sanctum')->post('logout', [AuthController::class, 'logout']);
 // API Resource Routes
 Route::apiResource('users', UserController::class);
 Route::apiResource('categories', CategoryController::class);
-Route::apiResource('courses', CourseController::class);
+Route::middleware('auth:sanctum')->group(function () {
+
+    // أي مستخدم مسجل دخول (طالب، مدرس، أدمن) يقدر يشوف الكورسات
+    Route::apiResource('courses', CourseController::class)->only(['index', 'show']);
+
+    // بس المدرس أو الأدمن يقدر يضيف/يعدّل/يمسح
+    Route::middleware('role:instructor|admin')->group(function () {
+        Route::apiResource('courses', CourseController::class)->only(['store', 'update', 'destroy']);
+    });
+
+});
 Route::apiResource('assessments', AssessmentController::class);
 Route::apiResource('questions', QuestionController::class);
 Route::apiResource('answer-options', AnswerOptionController::class);

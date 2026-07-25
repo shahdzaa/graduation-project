@@ -30,7 +30,7 @@ class AssessmentController extends Controller
         ]);
 
         $assessment = Assessment::create($validated);
-        return (new AssessmentResource(assessment->load('domain')))->response()->setStatusCode(201);
+        return (new AssessmentResource($assessment->load('domain')))->response()->setStatusCode(201);
     }
 
     /**

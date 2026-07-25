@@ -7,13 +7,13 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class SyllabusResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
     public function toArray(Request $request): array
     {
-        return parent::toArray($request);
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'duration_minutes' => $this->duration_minutes,
+            'type' => new SyllabusTypeResource($this->whenLoaded('type')),
+        ];
     }
 }

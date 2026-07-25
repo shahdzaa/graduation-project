@@ -7,13 +7,17 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class InstructorProfileResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
     public function toArray(Request $request): array
     {
-        return parent::toArray($request);
+        return [
+            'id' => $this->id,
+            'bio' => $this->bio,
+            'specialization' => $this->specialization,
+            'linkedin_url' => $this->linkedin_url,
+            'years_experience' => $this->years_experience,
+            'website_url' => $this->website_url,
+            'average_rating' => $this->average_rating,
+            'user' => new UserResource($this->whenLoaded('user')),
+        ];
     }
 }

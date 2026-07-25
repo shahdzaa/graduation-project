@@ -33,7 +33,7 @@ class RecommendationLogController extends Controller
         ]);
 
         $log = RecommendationLog::create($validated);
-        return (new RecommendationLogResource(log->load(['user', 'attempt', 'recommendedCourse'])))->response()->setStatusCode(201);
+        return (new RecommendationLogResource($log->load(['user', 'attempt', 'recommendedCourse'])))->response()->setStatusCode(201);
     }
 
     /**

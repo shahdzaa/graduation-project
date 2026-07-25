@@ -24,7 +24,7 @@ class InstructorProfileController extends Controller
             'rating' => 'nullable|numeric|min:0|max:5',
         ]);
         $instructor = InstructorProfile::create($validated);
-        return (new InstructorProfileResource(instructor->load(['user', 'courses'])))->response()->setStatusCode(201);
+        return (new InstructorProfileResource($instructor->load(['user', 'courses'])))->response()->setStatusCode(201);
     }
 
     public function show(InstructorProfile $instructorProfile): JsonResponse
