@@ -17,7 +17,7 @@ return new class extends Migration
                   ->cascadeOnDelete();
 
             // The actual learning point (e.g., "Master Laravel Migrations")
-            $table->string('content', 500); 
+            $table->text('content');
 
             // Optional: To arrange the points in a specific order
             $table->integer('sort_order')->default(0);

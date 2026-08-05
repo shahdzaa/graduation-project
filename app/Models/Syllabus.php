@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Syllabus extends Model
 {
+    protected $table = 'syllabus';
+
     protected $fillable = ['module_id', 'name', 'type_id', 'duration_minutes'];
 
     public function module(): BelongsTo

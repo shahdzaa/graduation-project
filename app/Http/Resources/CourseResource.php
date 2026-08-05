@@ -29,7 +29,7 @@ class CourseResource extends JsonResource
             'prerequisites' => CourseResource::collection($this->whenLoaded('prerequisites')),
             'modules' => ModuleResource::collection($this->whenLoaded('modules')),
             'skills' => CourseSkillResource::collection($this->whenLoaded('skills')),
-
+            'students_count' => $this->whenCounted('studentCourses'),
             // بيانات تسجيل الطالب (بتظهر بس لو الكورس جاي من $user->enrolledCourses)
             'enrollment' => $this->whenPivotLoaded('student_courses', function () {
                 return [

@@ -16,12 +16,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
 {
-    $this->call([
-        StudentSeeder::class,
-    ]);
-    $this->state(fn (array $attributes) => [
-        'role' => 'instructor',
-    ]);
+
     $this->call([
     RoleSeeder::class,
     ]);

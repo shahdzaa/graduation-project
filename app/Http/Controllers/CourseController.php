@@ -12,11 +12,33 @@ class CourseController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(): JsonResponse
-    {
-        $courses = Course::with(['level', 'type', 'domain', 'category', 'modules', 'reviews', 'skills', 'organizations', 'instructors', 'certificates'])->get();
-        return CourseResource::collection($courses)->response();
+    public function index(Request $request): JsonResponse
+{
+    $user = auth('sanctum')->user();
+    $isStaff = $user && $user->hasAnyRole(['admin', 'instructor']);
+
+    $query = Course::with(['level', 'type', 'domain', 'category']);
+
+    if (!$isStaff) {
+        $query->where('is_published', true);
     }
+
+    if ($request->filled('domain_id')) {
+        $query->where('domain_id', $request->domain_id);
+    }
+
+    $sort = $request->get('sort', 'trending');
+    match ($sort) {
+        'trending' => $query->orderByDesc('average_rating'),
+        'newest'   => $query->orderByDesc('created_at'),
+        default    => $query->orderByDesc('average_rating'),
+    };
+
+    $perPage = $request->get('per_page', 12);
+    $courses = $query->paginate($perPage);
+
+    return CourseResource::collection($courses)->response();
+}
 
     /**
      * Store a newly created resource in storage.

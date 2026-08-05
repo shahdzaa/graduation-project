@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('linkedin_url')->nullable();
             $table->integer('years_experience')->default(0);
             $table->string('website_url')->nullable();
-            $table->float('average_rating')->default(0);
+            $table->float('average_rating')->nullable()->default(0);
             $table->timestamps();
        });
     }

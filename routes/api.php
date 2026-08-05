@@ -22,6 +22,7 @@ use App\Http\Controllers\InstructorProfileController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrganizationController;
+use App\Http\Controllers\PlacementTestController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\RecommendationLogController;
 use App\Http\Controllers\SkillController;
@@ -51,47 +52,22 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 Route::post('login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->post('logout', [AuthController::class, 'logout']);
+
 // API Resource Routes
 Route::apiResource('users', UserController::class);
-Route::apiResource('categories', CategoryController::class);
+
+// عام - أي زائر يقدر يشوف بدون تسجيل دخول
+Route::apiResource('courses', CourseController::class)->only(['index', 'show']);
+Route::apiResource('domains', DomainController::class)->only(['index', 'show']);
+
+// محمي - محتاج تسجيل دخول + دور مناسب
 Route::middleware('auth:sanctum')->group(function () {
 
-    // أي مستخدم مسجل دخول (طالب، مدرس، أدمن) يقدر يشوف الكورسات
-    Route::apiResource('courses', CourseController::class)->only(['index', 'show']);
-
-    // بس المدرس أو الأدمن يقدر يضيف/يعدّل/يمسح
     Route::middleware('role:instructor|admin')->group(function () {
         Route::apiResource('courses', CourseController::class)->only(['store', 'update', 'destroy']);
+        Route::apiResource('domains', DomainController::class)->only(['store', 'update', 'destroy']);
     });
 
-});
-Route::apiResource('assessments', AssessmentController::class);
-Route::apiResource('questions', QuestionController::class);
-Route::apiResource('answer-options', AnswerOptionController::class);
-Route::apiResource('user-test-attempts', UserTestAttemptController::class);
-Route::apiResource('user-answers', UserAnswerController::class);
-Route::apiResource('recommendation-logs', RecommendationLogController::class);
+    Route::post('/placement-test/{domainId}', [PlacementTestController::class, 'startDomainPlacementTest']);
 
-// Additional Resource Routes
-Route::apiResource('course-instructors', CourseInstructorController::class);
-Route::apiResource('course-levels', CourseLevelController::class);
-Route::apiResource('course-modules', CourseModuleController::class);
-Route::apiResource('course-organizations', CourseOrganizationController::class);
-Route::apiResource('course-prerequisites', CoursePrerequisiteController::class);
-Route::apiResource('course-reviews', CourseReviewController::class);
-Route::apiResource('course-skills', CourseSkillController::class);
-Route::apiResource('course-types', CourseTypeController::class);
-Route::apiResource('domains', DomainController::class);
-Route::apiResource('instructor-profiles', InstructorProfileController::class);
-Route::apiResource('modules', ModuleController::class);
-Route::apiResource('notifications', NotificationController::class);
-Route::apiResource('organizations', OrganizationController::class);
-Route::apiResource('skills', SkillController::class);
-Route::apiResource('student-courses', StudentCourseController::class);
-Route::apiResource('student-profiles', StudentProfileController::class);
-Route::apiResource('student-skill-matrices', StudentSkillMatrixController::class);
-Route::apiResource('syllabi', SyllabusController::class);
-Route::apiResource('syllabus-types', SyllabusTypeController::class);
-Route::apiResource('certificates', CertificateController::class);
-Route::apiResource('aptitude-score-mappings', AptitudeScoreMappingController::class);
-Route::get('ai-quizzes/{courseId}', [AIQuizController::class, 'generateCourseQuiz']);
+});

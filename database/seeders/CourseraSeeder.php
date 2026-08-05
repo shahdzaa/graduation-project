@@ -41,6 +41,15 @@ class CourseraSeeder extends Seeder
         }
 
         $mysqli->query('SET FOREIGN_KEY_CHECKS=0');
+
+        // السماح بأن تكون مدة الكورس فارغة
+        if (!$mysqli->query("\n            ALTER TABLE `courses`\n            MODIFY `duration_minutes` INT NULL DEFAULT NULL\n        ")) {
+            $this->command->error(
+                "❌ تعذر تعديل duration_minutes: " . $mysqli->error
+            );
+            return;
+        }
+
         foreach ($tables as $table) {
             $mysqli->query("TRUNCATE TABLE `$table`");
         }
@@ -55,7 +64,7 @@ class CourseraSeeder extends Seeder
             '05_organizations.sql',
             '06_users_instructors.sql',
             '06b_instructor_profiles.sql',
-            // '07_courses.sql',
+            '07_courses.sql',
             '08_course_organizations.sql',
             '09_course_instructors.sql',
             '10_learning_outcomes.sql',
@@ -106,6 +115,15 @@ class CourseraSeeder extends Seeder
         // أزل التعليقات
         $sql = preg_replace('/^--.*$/m', '', $sql);
         $sql = trim($sql);
+
+        // في ملف الكورسات: حوّل مدة الكورس الفارغة إلى NULL
+        if ($label === '07_courses.sql') {
+            $sql = preg_replace(
+                "/,\s*''\s*,(\s*(?:NULL|\d+)\s*,\s*(?:NULL|\d+)\s*,)/",
+                ", NULL,$1",
+                $sql
+            );
+        }
 
         if (empty($sql)) {
             $this->command->warn("⚠️  $label فاضي");
