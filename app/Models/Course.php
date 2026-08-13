@@ -62,6 +62,12 @@ class Course extends Model
         return $this->belongsToMany(User::class, 'student_courses')->withPivot('enrolled_at', 'status', 'progress_percent');
     }
 
+    // طلاب المقرر عبر جدول pivot (صفوف التسجيل)
+    public function studentCourses(): HasMany
+    {
+        return $this->hasMany(\App\Models\StudentCourse::class);
+    }
+
     public function reviews(): HasMany
     {
         return $this->hasMany(CourseReview::class);
@@ -85,5 +91,10 @@ class Course extends Model
     public function certificates(): HasMany
     {
         return $this->hasMany(Certificate::class);
+    }
+
+    public function learningOutcomes(): HasMany
+    {
+        return $this->hasMany(LearningOutcome::class);
     }
 }

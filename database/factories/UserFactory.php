@@ -18,7 +18,6 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => Hash::make('password'), // نفس الباسوورد لكل المستخدمين التجريبيين
             'remember_token' => Str::random(10),
-            'role' => 'student',
             'avatar' => null,
             'is_active' => true,
             'last_login_at' => fake()->optional()->dateTimeBetween('-1 month', 'now'),
@@ -26,18 +25,14 @@ class UserFactory extends Factory
         ];
     }
 
-    // حالة جاهزة للمدرّسين لو احتجتيها لاحقاً
+    // إذا أردنا إنشاء مستخدم مع دور من Spatie مباشرةً
     public function instructor(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'role' => 'instructor',
-        ]);
+        return $this->afterCreating(fn (\App\Models\User $user) => $user->assignRole('instructor'));
     }
 
     public function admin(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'role' => 'admin',
-        ]);
+        return $this->afterCreating(fn (\App\Models\User $user) => $user->assignRole('admin'));
     }
 }

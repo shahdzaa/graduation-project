@@ -28,12 +28,12 @@ class CategoryController extends Controller
             'slug' => 'required|string|max:250|unique:categories',
             'parent_id' => 'nullable|exists:categories,id',
             'domain_id' => 'nullable|exists:domains,id',
-            'icon' => 'nullable|string',
-            'order_index' => 'integer|default:0',
+            'icon' => 'nullable|string|max:250',
+            'order_index' => 'nullable|integer',
         ]);
 
         $category = Category::create($validated);
-        return (new CategoryResource($category->load(['parent', 'domain'])))->response()->setStatusCode(201);
+        return (new CategoryResource($category->load(['parent', 'children', 'domain', 'courses'])))->response()->setStatusCode(201);
     }
 
     /**
@@ -54,12 +54,12 @@ class CategoryController extends Controller
             'slug' => 'required|string|max:250|unique:categories,slug,' . $category->id,
             'parent_id' => 'nullable|exists:categories,id',
             'domain_id' => 'nullable|exists:domains,id',
-            'icon' => 'nullable|string',
-            'order_index' => 'integer',
+            'icon' => 'nullable|string|max:250',
+            'order_index' => 'nullable|integer',
         ]);
 
         $category->update($validated);
-        return (new CategoryResource($category->load(['parent', 'domain'])))->response();
+        return (new CategoryResource($category->load(['parent', 'children', 'domain', 'courses'])))->response();
     }
 
     /**

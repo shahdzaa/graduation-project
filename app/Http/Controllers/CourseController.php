@@ -64,7 +64,7 @@ class CourseController extends Controller
         ]);
 
         $course = Course::create($validated);
-        return (new CourseResource($course->load(['level', 'type', 'domain', 'category'])))->response()->setStatusCode(201);
+        return (new CourseResource($course->load(['level', 'type', 'domain', 'category', 'learningOutcomes'])))->response()->setStatusCode(201);
     }
 
     /**
@@ -72,7 +72,21 @@ class CourseController extends Controller
      */
     public function show(Course $course): JsonResponse
     {
-        return (new CourseResource($course->load(['level', 'type', 'domain', 'category', 'modules', 'reviews', 'skills', 'organizations', 'instructors', 'certificates'])))->response();
+        $course->load([
+            'level',
+            'type',
+            'domain',
+            'modules',
+            'skills',
+            'organizations',
+            'instructors',
+            'prerequisites',
+            'learningOutcomes',
+        ]);
+
+        $course->loadCount('studentCourses');  // ✅ لتفعيل students_count
+
+        return (new CourseResource($course))->response();
     }
 
     /**
@@ -101,7 +115,7 @@ public function update(Request $request, Course $course): JsonResponse
     ]);
 
     $course->update($validated);
-    return (new CourseResource($course->load(['level', 'type', 'domain', 'category'])))->response();
+    return (new CourseResource($course->load(['level', 'type', 'domain', 'category', 'learningOutcomes'])))->response();
 }
 
 public function destroy(Course $course): JsonResponse

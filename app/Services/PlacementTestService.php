@@ -5,10 +5,11 @@ namespace App\Services;
 class PlacementTestService
 {
     /**
-     * يختار modules موزعة على الكورسات (round-robin) بدل تقسيم قائمة
-     * مرتبة أبجدياً إلى كتل لا تعبّر عن الصعوبة أو التغطية الحقيقية.
-     * المصدر الوحيد الآن هو modules؛ الموديل هو من يحدد شو الطالب
-     * بيعرف وشو لأ من خلال إجاباته على الأسئلة.
+     * يبني أسئلة الاختبار من عناصر syllabus المرتبطة بالـ category
+     * المختارة. نوزّع الاختيار Round-robin بين الـ modules حتى ما يحتكر
+     * module غني بعناصر syllabus الاختبار على حساب باقي المودولز داخل
+     * نفس الـ category. الموديل (Gemini) هو من يحدد شو الطالب بيعرف
+     * وشو لأ من خلال إجاباته على الأسئلة.
      */
     public function generateThresholdBlocks(array $features, int $targetQuestions = 25): array
     {
@@ -18,11 +19,11 @@ class PlacementTestService
             return [];
         }
 
-        $selected = $this->spreadAcrossCourses($features, $targetQuestions);
+        $selected = $this->spreadAcrossModules($features, $targetQuestions);
 
         if (count($selected) < $targetQuestions) {
-            // إذا ما كفت الـ round-robin (كورسات قليلة الـ modules)، نكمّل
-            // من الباقي بدون تكرار.
+            // إذا ما كفى الـ round-robin (modules قليلة عناصر syllabus)،
+            // نكمّل من الباقي بدون تكرار.
             $selectedKeys = [];
             foreach ($selected as $item) {
                 $selectedKeys[$this->featureKey($item)] = true;
@@ -43,10 +44,11 @@ class PlacementTestService
 
         $selected = array_slice($selected, 0, $targetQuestions);
 
-        // نخلط ترتيب المودولز بشكل حتمي حتى ما تتجمع كل مودولز كورس وحد وراء بعض.
+        // نخلط ترتيب عناصر الـ syllabus بشكل حتمي حتى ما تتجمع كل عناصر
+        // module وحد وراء بعض.
         usort($selected, function (array $left, array $right) {
-            $leftKey = sprintf('%010u', crc32($left['course_id'] . '|' . $left['topic']));
-            $rightKey = sprintf('%010u', crc32($right['course_id'] . '|' . $right['topic']));
+            $leftKey = sprintf('%010u', crc32($left['module_id'] . '|' . $left['topic']));
+            $rightKey = sprintf('%010u', crc32($right['module_id'] . '|' . $right['topic']));
 
             return $leftKey <=> $rightKey;
         });
@@ -66,7 +68,7 @@ class PlacementTestService
                 'question_index' => $index + 1,
                 'difficulty_level' => $difficulty,
                 'threshold_topic' => $item['topic'],
-                'source_type' => 'module',
+                'source_type' => 'syllabus',
                 'course_id' => $item['course_id'],
                 'course_title' => $item['course_title'],
                 'module_name' => $item['module_name'],
@@ -88,13 +90,11 @@ class PlacementTestService
 
             $sourceType = $feature['source_type'] ?? null;
             $topic = trim((string) ($feature['topic'] ?? ''));
-            $courseTitle = trim((string) ($feature['course_title'] ?? ''));
-            $courseId = (int) ($feature['course_id'] ?? 0);
+            $moduleId = (int) ($feature['module_id'] ?? 0);
 
             if (
-                $sourceType !== 'module'
-                || $courseId < 1
-                || $courseTitle === ''
+                $sourceType !== 'syllabus'
+                || $moduleId < 1
                 || mb_strlen($topic) < 3
             ) {
                 continue;
@@ -103,11 +103,18 @@ class PlacementTestService
             $topic = mb_substr($topic, 0, 500);
 
             $item = [
-                'source_type' => 'module',
-                'course_id' => $courseId,
-                'course_title' => $courseTitle,
+                'source_type' => 'syllabus',
+                'module_id' => $moduleId,
                 'module_name' => isset($feature['module_name'])
                     ? trim((string) $feature['module_name'])
+                    : null,
+                // course_id/course_title اختياريان: عنصر syllabus بيبقى
+                // صالح حتى لو الـ module تبعو مش مرتبط بأي كورس بعد.
+                'course_id' => isset($feature['course_id']) && $feature['course_id']
+                    ? (int) $feature['course_id']
+                    : null,
+                'course_title' => isset($feature['course_title'])
+                    ? trim((string) $feature['course_title'])
                     : null,
                 'topic' => $topic,
                 'position' => (int) ($feature['position'] ?? 0),
@@ -120,49 +127,50 @@ class PlacementTestService
     }
 
     /**
-     * Round-robin بين الكورسات حتى لا يحتكر كورس غني بالمودولز الاختبار.
+     * Round-robin بين الـ modules حتى ما يحتكر module غني بعناصر syllabus
+     * الاختبار على حساب باقي modules نفس الـ category.
      */
-    private function spreadAcrossCourses(array $items, int $limit): array
+    private function spreadAcrossModules(array $items, int $limit): array
     {
         if ($limit < 1 || empty($items)) {
             return [];
         }
 
-        $byCourse = [];
+        $byModule = [];
 
         foreach ($items as $item) {
-            $byCourse[$item['course_id']][] = $item;
+            $byModule[$item['module_id']][] = $item;
         }
 
-        ksort($byCourse);
+        ksort($byModule);
 
-        foreach ($byCourse as &$courseItems) {
+        foreach ($byModule as &$moduleItems) {
             usort(
-                $courseItems,
+                $moduleItems,
                 fn (array $a, array $b) =>
                     [$a['position'], $a['topic']] <=> [$b['position'], $b['topic']]
             );
         }
-        unset($courseItems);
+        unset($moduleItems);
 
         $selected = [];
 
         while (count($selected) < $limit) {
             $added = false;
 
-            foreach ($byCourse as &$courseItems) {
-                if (empty($courseItems)) {
+            foreach ($byModule as &$moduleItems) {
+                if (empty($moduleItems)) {
                     continue;
                 }
 
-                $selected[] = array_shift($courseItems);
+                $selected[] = array_shift($moduleItems);
                 $added = true;
 
                 if (count($selected) >= $limit) {
                     break;
                 }
             }
-            unset($courseItems);
+            unset($moduleItems);
 
             if (!$added) {
                 break;
@@ -176,7 +184,7 @@ class PlacementTestService
     {
         return implode('|', [
             $feature['source_type'] ?? '',
-            (string) ($feature['course_id'] ?? ''),
+            (string) ($feature['module_id'] ?? ''),
             mb_strtolower(trim((string) ($feature['topic'] ?? ''))),
         ]);
     }
