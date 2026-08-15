@@ -8,7 +8,23 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class UserTestAttempt extends Model
 {
-    protected $fillable = ['user_id', 'assessment_id', 'start_time', 'end_time', 'total_score'];
+    protected $fillable = [
+        'user_id',
+        'assessment_id',
+        'start_time',
+        'end_time',
+        'total_score',
+        'category',
+        'generation_batch_id',
+        'status',
+        'known_syllabi',
+    ];
+
+    protected $casts = [
+        'known_syllabi' => 'array',
+        'start_time' => 'datetime',
+        'end_time' => 'datetime',
+    ];
 
     public function user(): BelongsTo
     {

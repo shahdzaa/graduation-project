@@ -64,11 +64,13 @@ Route::apiResource('domains', DomainController::class)->only(['index', 'show']);
 Route::middleware('auth:sanctum')->group(function () {
 
     Route::middleware('role:instructor|admin')->group(function () {
-            Route::apiResource('courses', CourseController::class)->only(['store', 'update', 'destroy']);
+        Route::apiResource('courses', CourseController::class)->only(['store', 'update', 'destroy']);
         Route::apiResource('domains', DomainController::class)->only(['store', 'update', 'destroy']);
     });
 
-Route::post('/placement-test/{categoryId}', [PlacementTestController::class, 'startCategoryPlacementTest']);
-
+    Route::post('/placement/generate', [PlacementTestController::class, 'generate']);
+    Route::post('/placement/{attempt}/submit', [PlacementTestController::class, 'submit']);
+    Route::post('/placement-test/{categoryId}', [PlacementTestController::class, 'startCategoryPlacementTest']);
 });
+
 Route::apiResource('categories', CategoryController::class)->only(['index', 'show']);

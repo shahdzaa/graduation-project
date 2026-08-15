@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'placement_test' => [
+        'url' => env('PLACEMENT_TEST_SERVICE_URL', 'http://localhost:8000'),
+    ],
+
 ];
