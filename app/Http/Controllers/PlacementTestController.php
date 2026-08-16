@@ -3,12 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
-use App\Models\UserTestAttempt;
+use App\Models\PlacementAttempt;
 use App\Services\PlacementTestService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class PlacementTestController extends Controller
 {
@@ -20,14 +21,7 @@ class PlacementTestController extends Controller
     /**
      * POST /api/placement/generate
      *
-     * Frontend يرسل payload كامل من category + placement_topics
-     * ثم يطلب من AI service توليد 25 سؤال، وبعدها يخزنها في DB
-     * ويرجع attempt_id + الأسئلة بدون correct_answer.
-     */
-    /**
-     * POST /api/placement/generate
-     *
-     * جديد: يقبل فقط category_id
+     * يقبل فقط category_id
      * ثم يجلب الـ syllabus items بنفسه ويبني blocks
      * ثم يرسلها للـ AI service
      */
@@ -122,6 +116,12 @@ class PlacementTestController extends Controller
 
         $questions = $pythonResponse->json('questions');
 
+        // ── ربط كل سؤال بالـ syllabus_topic من الـ block تبعه ──
+        foreach ($questions as $index => &$question) {
+            $question['syllabus_topic'] = $blocks[$index]['threshold_topic'] ?? null;
+        }
+        unset($question);
+
         $result = $this->placementService->storeGeneratedTest(
             userId: Auth::id(),
             category: $category->name,
@@ -137,16 +137,20 @@ class PlacementTestController extends Controller
 
     /**
      * POST /api/placement/{attempt}/submit
+     *
+     * يحسب النتيجة + known_syllabi
+     * ثم يبعت للـ Recommender service ويرجع التوصيات
      */
     public function submit(Request $request, int $attemptId)
     {
+        set_time_limit(300);
         $request->validate([
             'answers' => 'required|array|min:1',
-            'answers.*.question_id' => 'required|integer|exists:questions,id',
-            'answers.*.selected_option_id' => 'required|integer|exists:answer_options,id',
+            'answers.*.question_id' => 'required|integer|exists:placement_questions,id',
+            'answers.*.selected_option_id' => 'required|integer|exists:placement_answer_options,id',
         ]);
 
-        $attempt = UserTestAttempt::where('id', $attemptId)
+        $attempt = PlacementAttempt::where('id', $attemptId)
             ->where('user_id', Auth::id())
             ->firstOrFail();
 
@@ -155,19 +159,56 @@ class PlacementTestController extends Controller
             answers: $request->answers
         );
 
+        // ── جلب التوصيات من الـ Recommender service ──
+        $recommendations = $this->fetchRecommendations($result['known_syllabi'] ?? []);
+
         return response()->json([
-            'message' => 'تم تسليم الاختبار بنجاح.',
-            'score' => $result['score'],
-            'total' => $result['total'],
-            'known_syllabi' => $result['known_syllabi'],
+            'message'         => 'تم تسليم الاختبار بنجاح.',
+            'score'           => $result['score'],
+            'total'           => $result['total'],
+            'known_syllabi'   => $result['known_syllabi'],
+            'recommendations' => $recommendations,
         ]);
     }
 
     /**
-     * المصدر الآن هو syllabus المرتبط بالـ category المختارة (عبر
-     * syllabus.category_id)، مش modules الكورسات ضمن domain كامل.
-     * كل عنصر syllabus بيمثّل موضوع فرعي داخل module معيّن، وبنستخدم
-     * الـ module + الكورس (إذا موجود) كـ context بس للسؤال.
+     * يبعت الـ known_syllabi للـ Recommender ويرجع التوصيات.
+     * لو الـ service ما اشتغل، بيرجع مصفوفة فارغة بدون ما يوقف الـ submit.
+     */
+    private function fetchRecommendations(array $knownSyllabi): array
+    {
+        if (empty($knownSyllabi)) {
+            return [];
+        }
+
+        $syllabusText = implode(' ', $knownSyllabi);
+        $recommenderUrl = config('services.recommender.url', 'http://localhost:8002');
+
+        try {
+            $response = Http::timeout(60)->post(
+                $recommenderUrl . '/api/recommend',
+                ['syllabus_text' => $syllabusText]
+            );
+
+            if ($response->successful()) {
+                return $response->json('recommendations', []);
+            }
+
+            Log::warning('Recommender service returned error', [
+                'status' => $response->status(),
+                'body'   => $response->body(),
+            ]);
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            Log::warning('Recommender service unreachable', ['error' => $e->getMessage()]);
+        } catch (\Exception $e) {
+            Log::error('Recommender service unexpected error', ['error' => $e->getMessage()]);
+        }
+
+        return [];
+    }
+
+    /**
+     * POST /api/placement-test/{categoryId}
      */
     public function startCategoryPlacementTest($categoryId)
     {

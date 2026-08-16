@@ -38,5 +38,8 @@ return [
     'placement_test' => [
         'url' => env('PLACEMENT_TEST_SERVICE_URL', 'http://localhost:8000'),
     ],
+    'recommender' => [
+        'url' => env('RECOMMENDER_URL', 'http://localhost:8002'),
+    ],
 
 ];
