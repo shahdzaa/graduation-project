@@ -27,4 +27,16 @@ class InstructorProfile extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function courses()
+    {
+        return $this->hasManyThrough(
+            Course::class,
+            CourseInstructor::class,
+            'user_id',
+            'id',
+            'user_id',
+            'course_id'
+        );
+    }
 }

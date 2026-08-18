@@ -83,9 +83,9 @@ class Course extends Model
         return $this->belongsToMany(Organization::class, 'course_organizations');
     }
 
-    public function instructors(): BelongsToMany
+   public function instructors()
     {
-        return $this->belongsToMany(User::class, 'course_instructors');
+        return $this->belongsToMany(User::class, 'course_instructors', 'course_id', 'user_id');
     }
 
     public function certificates(): HasMany

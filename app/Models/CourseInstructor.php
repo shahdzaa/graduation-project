@@ -7,7 +7,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CourseInstructor extends Model
 {
+    protected $table = 'course_instructors';
+
     protected $fillable = ['course_id', 'user_id'];
+
     public $timestamps = false;
 
     public function course(): BelongsTo

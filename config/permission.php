@@ -31,6 +31,7 @@ return [
         'role' => Role::class,
 
     ],
+    'guard_name' => 'web',
 
     'table_names' => [
 

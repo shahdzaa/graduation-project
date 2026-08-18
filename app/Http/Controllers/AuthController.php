@@ -36,6 +36,42 @@ class AuthController extends Controller
             'token' => $token,
         ]);
     }
+    public function register(Request $request)
+    {
+        $validated = $request->validate([
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|email|unique:users,email',
+            'password' => 'required|string|min:8',
+            'role'     => 'required|in:student,instructor',
+        ]);
+
+        $user = User::create([
+            'name'     => $validated['name'],
+            'email'    => $validated['email'],
+            'password' => Hash::make($validated['password']),
+        ]);
+
+        $user->assignRole($validated['role']);
+
+        // إنشاء profile تلقائي حسب الدور
+        if ($validated['role'] === 'student') {
+            $user->studentProfile()->create([]);
+        } else {
+            $user->instructorProfile()->create([]);
+        }
+
+        $token = $user->createToken('api-token')->plainTextToken;
+
+        return response()->json([
+            'user' => [
+                'id'    => $user->id,
+                'name'  => $user->name,
+                'email' => $user->email,
+                'roles' => $user->getRoleNames(),
+            ],
+            'token' => $token,
+        ], 201);
+    }
 
     public function logout(Request $request)
     {
