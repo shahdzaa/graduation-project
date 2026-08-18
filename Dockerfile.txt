@@ -1,0 +1,9 @@
+FROM php:8.2-fpm-alpine
+RUN apk add --no-cache nginx wget supervisor
+RUN docker-php-ext-install pdo pdo_mysql
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+WORKDIR /appCOPY . .
+RUN composer install --no-dev --optimize-autoloader
+COPY ./nginx.conf /etc/nginx/nginx.conf
+EXPOSE 80
+CMD ["sh", "-c", "php artisan config:cache && php artisan route:cache && nginx -g 'daemon off;'"]

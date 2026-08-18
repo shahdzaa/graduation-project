@@ -27,6 +27,14 @@ class CourseController extends Controller
         $query->where('domain_id', $request->domain_id);
     }
 
+    if ($request->filled('search')) {
+        $search = $request->get('search');
+        $query->where(function ($q) use ($search) {
+            $q->where('title', 'like', "%{$search}%")
+              ->orWhere('description', 'like', "%{$search}%");
+        });
+    }
+
     $sort = $request->get('sort', 'trending');
     match ($sort) {
         'trending' => $query->orderByDesc('average_rating'),
