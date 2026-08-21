@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PlacementAttempt extends Model
 {
@@ -23,13 +25,18 @@ class PlacementAttempt extends Model
         'end_time' => 'datetime',
     ];
 
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function answers()
+    public function answers(): HasMany
     {
         return $this->hasMany(PlacementUserAnswer::class, 'attempt_id');
+    }
+
+    public function recommendationLogs(): HasMany
+    {
+        return $this->hasMany(RecommendationLog::class, 'attempt_id');
     }
 }

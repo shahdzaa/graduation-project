@@ -12,6 +12,7 @@ class SyllabusTypeResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
+            'syllabi_count' => $this->whenCounted('syllabi'),
         ];
     }
 }

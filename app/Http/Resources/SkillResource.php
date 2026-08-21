@@ -12,7 +12,8 @@ class SkillResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'module' => new ModuleResource($this->whenLoaded('module')),
+            'courses_count' => $this->whenCounted('courses'),
+            'students_count' => $this->whenCounted('studentSkillMatrices'),
         ];
     }
 }

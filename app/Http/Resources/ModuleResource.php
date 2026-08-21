@@ -14,10 +14,10 @@ class ModuleResource extends JsonResource
             'name' => $this->name,
             'description' => $this->description,
             'duration_minutes' => $this->duration_minutes,
-            // ترتيب الوحدة جوا كورس معيّن (متوفر بس لما تكوني جايي من $course->modules)
             'order_index' => $this->whenPivotLoaded('course_modules', fn () => $this->pivot->order_index),
-            'skills' => SkillResource::collection($this->whenLoaded('skills')),
-            'syllabus' => SyllabusResource::collection($this->whenLoaded('syllabus')),
+            'syllabus' => SyllabusResource::collection($this->whenLoaded('syllabi')),
+            'courses_count' => $this->whenCounted('courses'),
+            'syllabus_count' => $this->whenCounted('syllabi'),
         ];
     }
 }

@@ -11,6 +11,8 @@ class StudentCourseResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'user_id' => $this->user_id,
+            'course_id' => $this->course_id,
             'enrolled_at' => $this->enrolled_at,
             'status' => $this->status,
             'progress_percent' => $this->progress_percent,

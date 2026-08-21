@@ -11,8 +11,12 @@ class RecommendationLogResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'user_id' => $this->user_id,
+            'attempt_id' => $this->attempt_id,
+            'recommended_course_id' => $this->recommended_course_id,
             'recommendation_date' => $this->recommendation_date,
             'user' => new UserResource($this->whenLoaded('user')),
+            'attempt' => new PlacementAttemptResource($this->whenLoaded('attempt')),
             'recommended_course' => new CourseResource($this->whenLoaded('recommendedCourse')),
         ];
     }

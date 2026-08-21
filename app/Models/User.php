@@ -24,6 +24,8 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, SoftDeletes;
 
+    protected string $guard_name = 'web';
+
     /**
      * The attributes that are mass assignable.
      *
@@ -81,9 +83,9 @@ class User extends Authenticatable
         return $this->hasMany(CourseReview::class);
     }
 
-    public function testAttempts(): HasMany
+    public function placementAttempts(): HasMany
     {
-        return $this->hasMany(UserTestAttempt::class);
+        return $this->hasMany(PlacementAttempt::class);
     }
 
     public function recommendationLogs(): HasMany

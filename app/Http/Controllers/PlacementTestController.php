@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\PlacementAttemptResource;
 use App\Models\Category;
 use App\Models\PlacementAttempt;
 use App\Services\PlacementTestService;
@@ -35,37 +36,7 @@ class PlacementTestController extends Controller
 
         $category = Category::findOrFail($request->category_id);
 
-        // جلب الـ syllabus items من DB
-        $syllabusItems = DB::table('syllabus')
-            ->join('modules', 'syllabus.module_id', '=', 'modules.id')
-            ->leftJoin('course_modules', 'course_modules.module_id', '=', 'modules.id')
-            ->leftJoin('courses', 'courses.id', '=', 'course_modules.course_id')
-            ->where('syllabus.category_id', $request->category_id)
-            ->select([
-                'syllabus.id as syllabus_id',
-                'syllabus.name as topic',
-                'modules.id as module_id',
-                'modules.name as module_name',
-                'courses.id as course_id',
-                'courses.title as course_title',
-                'course_modules.order_index as position',
-            ])
-            ->orderBy('modules.id')
-            ->orderBy('courses.id')
-            ->orderBy('course_modules.order_index')
-            ->get()
-            ->unique('syllabus_id')
-            ->map(fn ($row) => [
-                'source_type' => 'syllabus',
-                'module_id' => (int) $row->module_id,
-                'module_name' => $row->module_name,
-                'course_id' => $row->course_id ? (int) $row->course_id : null,
-                'course_title' => $row->course_title,
-                'topic' => $row->topic,
-                'position' => (int) ($row->position ?? 0),
-            ])
-            ->values()
-            ->all();
+        $syllabusItems = $this->syllabusItemsForCategory((int) $request->category_id);
 
         if (empty($syllabusItems)) {
             return response()->json([
@@ -115,6 +86,13 @@ class PlacementTestController extends Controller
         }
 
         $questions = $pythonResponse->json('questions');
+
+        if (! is_array($questions) || count($questions) !== 25) {
+            return response()->json([
+                'message' => 'خدمة توليد الأسئلة أعادت بنية غير صالحة.',
+                'questions_received' => is_array($questions) ? count($questions) : 0,
+            ], 502);
+        }
 
         // ── ربط كل سؤال بالـ syllabus_topic من الـ block تبعه ──
         foreach ($questions as $index => &$question) {
@@ -171,6 +149,29 @@ class PlacementTestController extends Controller
         ]);
     }
 
+    public function attempts(Request $request)
+    {
+        $attempts = PlacementAttempt::query()
+            ->where('user_id', $request->user()->id)
+            ->select([
+                'id', 'user_id', 'category', 'generation_batch_id', 'start_time',
+                'end_time', 'total_score', 'known_syllabi', 'status',
+            ])
+            ->latest('start_time')
+            ->paginate(min(max($request->integer('per_page', 20), 1), 100));
+
+        return PlacementAttemptResource::collection($attempts)->response();
+    }
+
+    public function showAttempt(Request $request, int $attempt)
+    {
+        $placementAttempt = PlacementAttempt::query()
+            ->where('user_id', $request->user()->id)
+            ->findOrFail($attempt);
+
+        return (new PlacementAttemptResource($placementAttempt))->response();
+    }
+
     /**
      * يبعت الـ known_syllabi للـ Recommender ويرجع التوصيات.
      * لو الـ service ما اشتغل، بيرجع مصفوفة فارغة بدون ما يوقف الـ submit.
@@ -216,37 +217,7 @@ class PlacementTestController extends Controller
 
         set_time_limit(300);
 
-        $syllabusItems = DB::table('syllabus')
-            ->join('modules', 'syllabus.module_id', '=', 'modules.id')
-            ->leftJoin('course_modules', 'course_modules.module_id', '=', 'modules.id')
-            ->leftJoin('courses', 'courses.id', '=', 'course_modules.course_id')
-            ->where('syllabus.category_id', $categoryId)
-            ->select([
-                'syllabus.id as syllabus_id',
-                'syllabus.name as topic',
-                'modules.id as module_id',
-                'modules.name as module_name',
-                'courses.id as course_id',
-                'courses.title as course_title',
-                'course_modules.order_index as position',
-            ])
-            ->orderBy('modules.id')
-            ->orderBy('courses.id')
-            ->orderBy('course_modules.order_index')
-            ->get()
-            ->unique('syllabus_id')
-            ->map(fn ($row) => [
-                'source_type' => 'syllabus',
-                'syllabus_id' => (int) $row->syllabus_id,
-                'module_id' => (int) $row->module_id,
-                'module_name' => $row->module_name,
-                'course_id' => $row->course_id ? (int) $row->course_id : null,
-                'course_title' => $row->course_title,
-                'topic' => $row->topic,
-                'position' => (int) ($row->position ?? 0),
-            ])
-            ->values()
-            ->all();
+        $syllabusItems = $this->syllabusItemsForCategory((int) $categoryId);
 
         if (empty($syllabusItems)) {
             return response()->json([
@@ -276,5 +247,43 @@ class PlacementTestController extends Controller
             'threshold_topics' => array_column($blocks, 'threshold_topic'),
             'blocks' => $blocks,
         ]);
+    }
+
+    private function syllabusItemsForCategory(int $categoryId): array
+    {
+        $coursePerModule = DB::table('course_modules')
+            ->selectRaw('module_id, MIN(course_id) as course_id')
+            ->groupBy('module_id');
+
+        return DB::table('syllabus')
+            ->join('modules', 'syllabus.module_id', '=', 'modules.id')
+            ->leftJoinSub($coursePerModule, 'module_course', function ($join) {
+                $join->on('module_course.module_id', '=', 'modules.id');
+            })
+            ->leftJoin('courses', 'courses.id', '=', 'module_course.course_id')
+            ->where('syllabus.category_id', $categoryId)
+            ->select([
+                'syllabus.id as syllabus_id',
+                'syllabus.name as topic',
+                'syllabus.order_index as position',
+                'modules.id as module_id',
+                'modules.name as module_name',
+                'courses.id as course_id',
+                'courses.title as course_title',
+            ])
+            ->orderBy('syllabus.module_id')
+            ->orderBy('syllabus.order_index')
+            ->get()
+            ->map(fn ($row) => [
+                'source_type' => 'syllabus',
+                'syllabus_id' => (int) $row->syllabus_id,
+                'module_id' => (int) $row->module_id,
+                'module_name' => $row->module_name,
+                'course_id' => $row->course_id ? (int) $row->course_id : null,
+                'course_title' => $row->course_title,
+                'topic' => $row->topic,
+                'position' => (int) $row->position,
+            ])
+            ->all();
     }
 }

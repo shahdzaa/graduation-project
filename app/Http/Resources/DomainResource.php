@@ -13,6 +13,9 @@ class DomainResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'description' => $this->description,
+            'courses_count' => $this->whenCounted('courses'),
+            'categories_count' => $this->whenCounted('categories'),
+            'categories' => CategoryResource::collection($this->whenLoaded('categories')),
         ];
     }
 }

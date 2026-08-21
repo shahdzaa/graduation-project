@@ -4,9 +4,6 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use App\Http\Resources\CourseResource;
-use App\Http\Resources\DomainResource;
-
 class CategoryResource extends JsonResource
 {
     public function toArray(Request $request): array
@@ -22,7 +19,8 @@ class CategoryResource extends JsonResource
             'domain' => new DomainResource($this->whenLoaded('domain')),
             'parent' => new CategoryResource($this->whenLoaded('parent')),
             'children' => CategoryResource::collection($this->whenLoaded('children')),
-            'courses' => CourseResource::collection($this->whenLoaded('courses')),
+            'syllabi' => SyllabusResource::collection($this->whenLoaded('syllabi')),
+            'syllabi_count' => $this->whenCounted('syllabi'),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

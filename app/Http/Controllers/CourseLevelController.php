@@ -11,7 +11,7 @@ class CourseLevelController extends Controller
 {
     public function index(): JsonResponse
     {
-        return CourseLevelResource::collection(CourseLevel::get())->response();
+        return CourseLevelResource::collection(CourseLevel::withCount('courses')->orderBy('id')->get())->response();
     }
 
     public function store(Request $request): JsonResponse
@@ -23,7 +23,7 @@ class CourseLevelController extends Controller
 
     public function show(CourseLevel $courseLevel): JsonResponse
     {
-        return (new CourseLevelResource($courseLevel->load('courses')))->response();
+        return (new CourseLevelResource($courseLevel->loadCount('courses')))->response();
     }
 
     public function update(Request $request, CourseLevel $courseLevel): JsonResponse

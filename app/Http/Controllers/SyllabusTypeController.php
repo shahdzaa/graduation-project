@@ -11,7 +11,7 @@ class SyllabusTypeController extends Controller
 {
     public function index(): JsonResponse
     {
-        return SyllabusTypeResource::collection(SyllabusType::with('syllabi')->get())->response();
+        return SyllabusTypeResource::collection(SyllabusType::withCount('syllabi')->orderBy('name')->get())->response();
     }
 
     public function store(Request $request): JsonResponse
@@ -23,7 +23,7 @@ class SyllabusTypeController extends Controller
 
     public function show(SyllabusType $syllabusType): JsonResponse
     {
-        return (new SyllabusTypeResource($syllabusType->load('syllabi')))->response();
+        return (new SyllabusTypeResource($syllabusType->loadCount('syllabi')))->response();
     }
 
     public function update(Request $request, SyllabusType $syllabusType): JsonResponse

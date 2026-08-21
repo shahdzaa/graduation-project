@@ -12,6 +12,7 @@ class OrganizationResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
+            'courses_count' => $this->whenCounted('courses'),
         ];
     }
 }

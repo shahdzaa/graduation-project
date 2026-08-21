@@ -12,6 +12,14 @@ class StudentSkillMatrix extends Model
     protected $keyType = 'string';
     public $incrementing = false;
 
+    protected function casts(): array
+    {
+        return [
+            'current_score' => 'float',
+            'last_updated' => 'datetime',
+        ];
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

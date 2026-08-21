@@ -11,7 +11,7 @@ class OrganizationController extends Controller
 {
     public function index(): JsonResponse
     {
-        return OrganizationResource::collection(Organization::with('courses')->get())->response();
+        return OrganizationResource::collection(Organization::withCount('courses')->orderBy('name')->get())->response();
     }
 
     public function store(Request $request): JsonResponse
@@ -23,7 +23,7 @@ class OrganizationController extends Controller
 
     public function show(Organization $organization): JsonResponse
     {
-        return (new OrganizationResource($organization->load('courses')))->response();
+        return (new OrganizationResource($organization->loadCount('courses')))->response();
     }
 
     public function update(Request $request, Organization $organization): JsonResponse

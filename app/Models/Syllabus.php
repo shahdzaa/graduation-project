@@ -9,7 +9,22 @@ class Syllabus extends Model
 {
     protected $table = 'syllabus';
 
-    protected $fillable = ['module_id', 'name', 'type_id', 'duration_minutes'];
+    protected $fillable = [
+        'module_id',
+        'name',
+        'order_index',
+        'type_id',
+        'category_id',
+        'duration_minutes',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'order_index' => 'integer',
+            'duration_minutes' => 'integer',
+        ];
+    }
 
     public function module(): BelongsTo
     {
@@ -19,5 +34,10 @@ class Syllabus extends Model
     public function type(): BelongsTo
     {
         return $this->belongsTo(SyllabusType::class, 'type_id');
+    }
+
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
     }
 }

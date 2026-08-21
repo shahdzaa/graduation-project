@@ -11,7 +11,7 @@ class CourseTypeController extends Controller
 {
     public function index(): JsonResponse
     {
-        return CourseTypeResource::collection(CourseType::with('courses')->get())->response();
+        return CourseTypeResource::collection(CourseType::withCount('courses')->orderBy('id')->get())->response();
     }
 
     public function store(Request $request): JsonResponse
@@ -23,7 +23,7 @@ class CourseTypeController extends Controller
 
     public function show(CourseType $courseType): JsonResponse
     {
-        return (new CourseTypeResource($courseType->load('courses')))->response();
+        return (new CourseTypeResource($courseType->loadCount('courses')))->response();
     }
 
     public function update(Request $request, CourseType $courseType): JsonResponse

@@ -14,25 +14,27 @@ class CourseResource extends JsonResource
             'id' => $this->id,
             'title' => $this->title,
             'url' => $this->url,
+            'thumbnail' => $this->thumbnail,
             'description' => $this->description,
             'price' => $this->price,
             'is_free' => $this->is_free,
+            'language' => $this->language,
+            'is_published' => $this->is_published,
             'duration_minutes' => $this->duration_minutes,
+            'schedule' => $this->schedule,
             'average_rating' => $this->average_rating,
-
-            // بيانات مرتبطة (بتظهر بس لو معمولها eager load بالكونترولر)
             'domain' => new DomainResource($this->whenLoaded('domain')),
             'level' => new CourseLevelResource($this->whenLoaded('level')),
             'type' => new CourseTypeResource($this->whenLoaded('type')),
-            'categories' => CategoryResource::collection($this->whenLoaded('categories')),
             'instructors' => UserResource::collection($this->whenLoaded('instructors')),
             'organizations' => OrganizationResource::collection($this->whenLoaded('organizations')),
-            'prerequisites' => CourseResource::collection($this->whenLoaded('prerequisites')),
+            'prerequisites' => CoursePrerequisiteResource::collection($this->whenLoaded('prerequisites')),
             'modules' => ModuleResource::collection($this->whenLoaded('modules')),
-            'skills' => CourseSkillResource::collection($this->whenLoaded('skills')),
+            'skills' => SkillResource::collection($this->whenLoaded('skills')),
             'learning_outcomes' => LearningOutcomeResource::collection($this->whenLoaded('learningOutcomes')),
             'students_count' => $this->whenCounted('studentCourses'),
-            // بيانات تسجيل الطالب (بتظهر بس لو الكورس جاي من $user->enrolledCourses)
+            'modules_count' => $this->whenCounted('modules'),
+            'reviews_count' => $this->whenCounted('reviews'),
             'enrollment' => $this->whenPivotLoaded('student_courses', function () {
                 return [
                     'enrolled_at' => $this->pivot->enrolled_at,
@@ -41,7 +43,6 @@ class CourseResource extends JsonResource
                 ];
             }),
 
-            // درجة التشابه من محرك التوصية (بتظهر بس لما تجي من RecommendationService)
             'similarity_score' => $this->when(
                 isset($this->similarity_score),
                 fn () => $this->similarity_score

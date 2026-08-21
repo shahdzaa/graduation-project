@@ -12,11 +12,14 @@ class Module extends Model
 
     public function courses(): BelongsToMany
     {
-        return $this->belongsToMany(Course::class, 'course_modules')->withPivot('order_index');
+        return $this->belongsToMany(Course::class, 'course_modules')
+            ->withPivot('order_index')
+            ->withTimestamps()
+            ->orderByPivot('order_index');
     }
 
     public function syllabi(): HasMany
     {
-        return $this->hasMany(Syllabus::class);
+        return $this->hasMany(Syllabus::class)->orderBy('order_index');
     }
 }

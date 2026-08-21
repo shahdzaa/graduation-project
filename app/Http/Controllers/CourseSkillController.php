@@ -2,46 +2,49 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\CourseSkill;
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 use App\Http\Resources\CourseSkillResource;
+use App\Models\CourseSkill;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class CourseSkillController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        return CourseSkillResource::collection(CourseSkill::with(['course', 'skill'])->get())->response();
+        $validated = $request->validate([
+            'course_id' => 'nullable|exists:courses,id',
+            'skill_id' => 'nullable|exists:skills,id',
+            'per_page' => 'nullable|integer|min:1|max:100',
+        ]);
+
+        $links = CourseSkill::query()
+            ->with(['course:id,title', 'skill:id,name'])
+            ->when(isset($validated['course_id']), fn ($q) => $q->where('course_id', $validated['course_id']))
+            ->when(isset($validated['skill_id']), fn ($q) => $q->where('skill_id', $validated['skill_id']))
+            ->orderBy('course_id')
+            ->paginate($validated['per_page'] ?? 50)
+            ->withQueryString();
+
+        return CourseSkillResource::collection($links)->response();
     }
 
     public function store(Request $request): JsonResponse
     {
-        $validated = $request->validate([
+        $link = CourseSkill::firstOrCreate($request->validate([
             'course_id' => 'required|exists:courses,id',
             'skill_id' => 'required|exists:skills,id',
-        ]);
-        $courseSkill = CourseSkill::create($validated);
-        return (new CourseSkillResource($courseSkill->load(['course', 'skill'])))->response()->setStatusCode(201);
+        ]));
+
+        return (new CourseSkillResource($link->load(['course:id,title', 'skill:id,name'])))
+            ->response()
+            ->setStatusCode($link->wasRecentlyCreated ? 201 : 200);
     }
 
-    public function show(CourseSkill $courseSkill): JsonResponse
+    public function destroy(int $course, int $skill): JsonResponse
     {
-        return (new CourseSkillResource($courseSkill->load(['course', 'skill'])))->response();
-    }
+        $deleted = CourseSkill::where('course_id', $course)->where('skill_id', $skill)->delete();
+        abort_if($deleted === 0, 404);
 
-    public function update(Request $request, CourseSkill $courseSkill): JsonResponse
-    {
-        $validated = $request->validate([
-            'course_id' => 'required|exists:courses,id',
-            'skill_id' => 'required|exists:skills,id',
-        ]);
-        $courseSkill->update($validated);
-        return (new CourseSkillResource($courseSkill->load(['course', 'skill'])))->response();
-    }
-
-    public function destroy(CourseSkill $courseSkill): JsonResponse
-    {
-        $courseSkill->delete();
         return response()->json(['message' => 'Course skill deleted successfully']);
     }
 }

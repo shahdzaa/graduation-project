@@ -7,16 +7,26 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class RecommendationLog extends Model
 {
-    protected $fillable = ['user_id', 'attempt_id', 'recommended_course_id', 'confidence_score', 'algorithm_version', 'recommendation_date'];
+    protected $fillable = [
+        'user_id',
+        'attempt_id',
+        'recommended_course_id',
+        'recommendation_date',
+    ];
+
+    protected function casts(): array
+    {
+        return ['recommendation_date' => 'datetime'];
+    }
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function attempt(): BelongsTo
+    public function attempt()
     {
-        return $this->belongsTo(UserTestAttempt::class, 'attempt_id');
+        return $this->belongsTo(PlacementAttempt::class, 'attempt_id');
     }
 
     public function recommendedCourse(): BelongsTo

@@ -15,7 +15,8 @@ class InstructorProfileController extends Controller
      */
     public function index(): JsonResponse
 {
-    $instructors = InstructorProfile::with(['user', 'courses'])
+    $instructors = InstructorProfile::with(['user:id,name,email,avatar,is_active', 'user.roles:id,name'])
+        ->withCount('courses')
         ->whereHas('user', function ($q) {
             $q->whereHas('roles', function ($r) {
                 $r->where('name', 'instructor');
@@ -45,7 +46,7 @@ class InstructorProfileController extends Controller
 
         $instructor = InstructorProfile::create($validated);
 
-        return (new InstructorProfileResource($instructor->load(['user', 'courses'])))
+        return (new InstructorProfileResource($instructor->load(['user', 'user.roles'])->loadCount('courses')))
             ->response()
             ->setStatusCode(201);
     }
@@ -54,10 +55,12 @@ class InstructorProfileController extends Controller
      * GET /instructor-profiles/{instructorProfile}
      * صفحة المدرس الكاملة
      */
-    public function show(InstructorProfile $instructorProfile): JsonResponse
+    public function show(Request $request, InstructorProfile $instructorProfile): JsonResponse
     {
+        $this->ensureCanAccess($request, $instructorProfile);
+
         return (new InstructorProfileResource(
-            $instructorProfile->load(['user', 'courses'])
+            $instructorProfile->load(['user', 'user.roles', 'courses.level', 'courses.domain'])->loadCount('courses')
         ))->response();
     }
 
@@ -67,6 +70,8 @@ class InstructorProfileController extends Controller
      */
     public function update(Request $request, InstructorProfile $instructorProfile): JsonResponse
     {
+        $this->ensureCanAccess($request, $instructorProfile);
+
         $validated = $request->validate([
             'bio'              => 'nullable|string',
             'specialization'   => 'nullable|string|max:255',
@@ -79,7 +84,7 @@ class InstructorProfileController extends Controller
         $instructorProfile->update($validated);
 
         return (new InstructorProfileResource(
-            $instructorProfile->load(['user', 'courses'])
+            $instructorProfile->load(['user', 'user.roles', 'courses.level', 'courses.domain'])->loadCount('courses')
         ))->response();
     }
 
@@ -98,9 +103,11 @@ class InstructorProfileController extends Controller
 public function me(Request $request): JsonResponse
 {
     $user = $request->user()->load([
+        'roles:id,name',
         'instructorProfile',
         'taughtCourses' => function ($q) {
-            $q->with(['level', 'domain']);
+            $q->with(['level:id,name', 'domain:id,name'])
+                ->withCount(['studentCourses', 'modules']);
         },
     ]);
 
@@ -122,9 +129,17 @@ public function me(Request $request): JsonResponse
             'id'    => $user->id,
             'name'  => $user->name,
             'email' => $user->email,
-            'role'  => $user->getRoleNames()->first(),
+            'role'  => $user->roles->first()?->name,
         ],
         'courses' => \App\Http\Resources\CourseResource::collection($user->taughtCourses),
     ]);
+}
+
+private function ensureCanAccess(Request $request, InstructorProfile $profile): void
+{
+    abort_unless(
+        $request->user()->hasRole('admin') || $profile->user_id === $request->user()->id,
+        403
+    );
 }
 }

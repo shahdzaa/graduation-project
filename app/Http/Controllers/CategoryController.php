@@ -2,72 +2,106 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Category;
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 use App\Http\Resources\CategoryResource;
+use App\Http\Resources\SyllabusResource;
+use App\Models\Category;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class CategoryController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index(): JsonResponse
     {
-        $categories = Category::with(['parent', 'children', 'domain', 'courses'])->get();
+        $categories = Category::query()
+            ->select(['id', 'name', 'slug', 'parent_id', 'domain_id', 'icon', 'order_index', 'created_at', 'updated_at'])
+            ->with([
+                'domain:id,name',
+                'parent:id,name,slug,parent_id,domain_id,icon,order_index',
+                'children:id,name,slug,parent_id,domain_id,icon,order_index',
+            ])
+            ->withCount('syllabi')
+            ->orderBy('domain_id')
+            ->orderBy('order_index')
+            ->orderBy('name')
+            ->get();
+
         return CategoryResource::collection($categories)->response();
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:250',
-            'slug' => 'required|string|max:250|unique:categories',
-            'parent_id' => 'nullable|exists:categories,id',
-            'domain_id' => 'nullable|exists:domains,id',
-            'icon' => 'nullable|string|max:250',
-            'order_index' => 'nullable|integer',
-        ]);
+        $category = Category::create($request->validate($this->rules()));
 
-        $category = Category::create($validated);
-        return (new CategoryResource($category->load(['parent', 'children', 'domain', 'courses'])))->response()->setStatusCode(201);
+        return (new CategoryResource($this->loadSummary($category)))
+            ->response()
+            ->setStatusCode(201);
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(Category $category): JsonResponse
     {
-        return (new CategoryResource($category->load(['parent', 'children', 'domain', 'courses'])))->response();
+        return (new CategoryResource($this->loadSummary($category)))->response();
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Category $category): JsonResponse
+    public function syllabi(Request $request, Category $category): JsonResponse
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:250',
-            'slug' => 'required|string|max:250|unique:categories,slug,' . $category->id,
-            'parent_id' => 'nullable|exists:categories,id',
-            'domain_id' => 'nullable|exists:domains,id',
-            'icon' => 'nullable|string|max:250',
-            'order_index' => 'nullable|integer',
+            'search' => 'nullable|string|max:200',
+            'module_id' => 'nullable|integer|exists:modules,id',
+            'per_page' => 'nullable|integer|min:1|max:100',
         ]);
 
-        $category->update($validated);
-        return (new CategoryResource($category->load(['parent', 'children', 'domain', 'courses'])))->response();
+        $syllabi = $category->syllabi()
+            ->select(['id', 'module_id', 'name', 'order_index', 'type_id', 'category_id', 'duration_minutes'])
+            ->with(['module:id,name', 'type:id,name'])
+            ->when(isset($validated['module_id']), fn ($q) => $q->where('module_id', $validated['module_id']))
+            ->when(isset($validated['search']), fn ($q) => $q->where('name', 'like', "%{$validated['search']}%"))
+            ->paginate($validated['per_page'] ?? 50)
+            ->withQueryString();
+
+        return SyllabusResource::collection($syllabi)->response();
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+    public function update(Request $request, Category $category): JsonResponse
+    {
+        $category->update($request->validate($this->rules($category)));
+
+        return (new CategoryResource($this->loadSummary($category)))->response();
+    }
+
     public function destroy(Category $category): JsonResponse
     {
         $category->delete();
+
         return response()->json(['message' => 'Category deleted successfully']);
+    }
+
+    private function loadSummary(Category $category): Category
+    {
+        return $category
+            ->load(['domain:id,name', 'parent:id,name,slug,parent_id,domain_id,icon,order_index', 'children'])
+            ->loadCount('syllabi');
+    }
+
+    private function rules(?Category $category = null): array
+    {
+        $required = $category ? 'sometimes' : 'required';
+        return [
+            'name' => "{$required}|string|max:250",
+            'slug' => [
+                $required,
+                'string',
+                'max:250',
+                Rule::unique('categories', 'slug')->ignore($category?->id),
+            ],
+            'parent_id' => [
+                'nullable',
+                'exists:categories,id',
+                Rule::notIn(array_filter([$category?->id])),
+            ],
+            'domain_id' => 'nullable|exists:domains,id',
+            'icon' => 'nullable|string|max:250',
+            'order_index' => 'nullable|integer|min:0',
+        ];
     }
 }

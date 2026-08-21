@@ -1,11 +1,7 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AIQuizController;
-use App\Http\Controllers\AnswerOptionController;
-use App\Http\Controllers\AptitudeScoreMappingController;
-use App\Http\Controllers\AssessmentController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CertificateController;
 use App\Http\Controllers\CourseController;
@@ -23,7 +19,6 @@ use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\PlacementTestController;
-use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\RecommendationLogController;
 use App\Http\Controllers\SkillController;
 use App\Http\Controllers\StudentCourseController;
@@ -32,198 +27,110 @@ use App\Http\Controllers\StudentSkillMatrixController;
 use App\Http\Controllers\SyllabusController;
 use App\Http\Controllers\SyllabusTypeController;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\UserAnswerController;
-use App\Http\Controllers\UserTestAttemptController;
-use App\Http\Controllers\AuthController;
+use App\Http\Resources\UserResource;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
-/*
-|--------------------------------------------------------------------------
-| ✅ PUBLIC ROUTES — لا يحتاج تسجيل دخول
-|--------------------------------------------------------------------------
-*/
-
-// Auth
-Route::post('login',    [AuthController::class, 'login']);
+Route::post('login', [AuthController::class, 'login']);
 Route::post('register', [AuthController::class, 'register']);
 
-// استعراض عام
-Route::apiResource('courses',      CourseController::class)->only(['index', 'show']);
-Route::apiResource('domains',      DomainController::class)->only(['index', 'show']);
-Route::apiResource('categories',   CategoryController::class)->only(['index', 'show']);
+Route::apiResource('courses', CourseController::class)->only(['index', 'show']);
+Route::apiResource('domains', DomainController::class)->only(['index', 'show']);
+Route::apiResource('categories', CategoryController::class)->only(['index', 'show']);
+Route::get('categories/{category}/syllabi', [CategoryController::class, 'syllabi'])
+    ->name('categories.syllabi');
 Route::apiResource('course-levels', CourseLevelController::class)->only(['index', 'show']);
-Route::apiResource('course-types',  CourseTypeController::class)->only(['index', 'show']);
+Route::apiResource('course-types', CourseTypeController::class)->only(['index', 'show']);
 Route::apiResource('organizations', OrganizationController::class)->only(['index', 'show']);
-Route::apiResource('skills',        SkillController::class)->only(['index', 'show']);
-
-/*
-|--------------------------------------------------------------------------
-| 🔒 PROTECTED ROUTES — يحتاج auth:sanctum
-|--------------------------------------------------------------------------
-*/
+Route::apiResource('skills', SkillController::class)->only(['index', 'show']);
+Route::apiResource('syllabus-types', SyllabusTypeController::class)->only(['index', 'show']);
 
 Route::middleware('auth:sanctum')->group(function () {
-
-    // --- المستخدم الحالي ---
-    Route::get('/user', fn(Request $request) => $request->user());
+    Route::get('user', function (Request $request) {
+        return new UserResource($request->user()->load('roles'));
+    });
     Route::post('logout', [AuthController::class, 'logout']);
 
-    /*
-    |----------------------------------------------------------------------
-    | 👤 STUDENT ROUTES — دور student
-    |----------------------------------------------------------------------
-    */
     Route::middleware('role:student')->group(function () {
-
-        // Profile الطالب
-        Route::apiResource('student-profiles', StudentProfileController::class)
-            ->only(['show', 'update']);
-        Route::get('/student/dashboard', [StudentProfileController::class, 'dashboard']);
-
-        // الكورسات المسجل فيها
+        Route::get('student/dashboard', [StudentProfileController::class, 'dashboard']);
         Route::apiResource('student-courses', StudentCourseController::class)
-            ->only(['index', 'show', 'store', 'destroy']);
-
-        // التقييمات
+            ->only(['index', 'show', 'store', 'update', 'destroy']);
         Route::apiResource('course-reviews', CourseReviewController::class)
             ->only(['store', 'update', 'destroy']);
+        Route::get('student-skill-matrices', [StudentSkillMatrixController::class, 'index']);
+        Route::get('student-skill-matrices/{skill}', [StudentSkillMatrixController::class, 'show'])
+            ->whereNumber('skill');
 
-        // Skill Matrix الطالب
-        Route::apiResource('student-skill-matrices', StudentSkillMatrixController::class)
-            ->only(['index', 'show']);
-
-        // Placement Test
-        Route::post('/placement/generate',                        [PlacementTestController::class, 'generate']);
-        Route::post('/placement/{attempt}/submit',                [PlacementTestController::class, 'submit']);
-        Route::post('/placement-test/{categoryId}',              [PlacementTestController::class, 'startCategoryPlacementTest']);
-
-        // محاولات الاختبار
-        Route::apiResource('user-test-attempts', UserTestAttemptController::class)
-            ->only(['index', 'show', 'store']);
-
-        // إجابات الطالب
-        Route::apiResource('user-answers', UserAnswerController::class)
-            ->only(['store']);
-
-        // Recommendation logs (قراءة فقط)
-        Route::apiResource('recommendation-logs', RecommendationLogController::class)
-            ->only(['index', 'show']);
-
-        // Notifications
-        Route::apiResource('notifications', NotificationController::class)
-            ->only(['index', 'show', 'update']); // update = mark as read
-
-        // Certificates
-        Route::apiResource('certificates', CertificateController::class)
-            ->only(['index', 'show']);
+        Route::post('placement/generate', [PlacementTestController::class, 'generate']);
+        Route::post('placement/{attemptId}/submit', [PlacementTestController::class, 'submit'])
+            ->whereNumber('attemptId');
+        Route::get('placement-attempts', [PlacementTestController::class, 'attempts']);
+        Route::get('placement-attempts/{attempt}', [PlacementTestController::class, 'showAttempt'])
+            ->whereNumber('attempt');
+        Route::post('placement-test/{categoryId}', [PlacementTestController::class, 'startCategoryPlacementTest'])
+            ->whereNumber('categoryId');
     });
 
-    /*
-    |----------------------------------------------------------------------
-    | 🎓 INSTRUCTOR ROUTES — دور instructor
-    |----------------------------------------------------------------------
-    */
+    Route::middleware('role:student|admin')->group(function () {
+        Route::apiResource('student-profiles', StudentProfileController::class)->only(['show', 'update']);
+        Route::apiResource('recommendation-logs', RecommendationLogController::class)->only(['index', 'show']);
+        Route::apiResource('notifications', NotificationController::class)->only(['index', 'show', 'update']);
+        Route::apiResource('certificates', CertificateController::class)->only(['index', 'show']);
+    });
+
     Route::middleware('role:instructor')->group(function () {
+        Route::get('instructor/me', [InstructorProfileController::class, 'me']);
+    });
 
-        // Profile المدرس
-        Route::apiResource('instructor-profiles', InstructorProfileController::class)
-            ->only(['show', 'update']);
-        Route::get('/instructor/me', [InstructorProfileController::class, 'me']);   
-        // إدارة الكورسات
-        Route::apiResource('courses', CourseController::class)
-            ->only(['store', 'update', 'destroy']);
-
-        // موديولات الكورس
+    Route::middleware('role:instructor|admin')->group(function () {
+        Route::apiResource('instructor-profiles', InstructorProfileController::class)->only(['show', 'update']);
+        Route::apiResource('courses', CourseController::class)->only(['store', 'update', 'destroy']);
         Route::apiResource('course-modules', CourseModuleController::class);
-        Route::apiResource('modules',        ModuleController::class);
-
-        // سيلابس
-        Route::apiResource('syllabi',       SyllabusController::class);
-        Route::apiResource('syllabus-types', SyllabusTypeController::class)
-            ->only(['index', 'show']);
-
-        // مهارات الكورس
-        Route::apiResource('course-skills', CourseSkillController::class);
-
-        // متطلبات مسبقة
+        Route::apiResource('modules', ModuleController::class);
+        Route::apiResource('syllabi', SyllabusController::class);
         Route::apiResource('course-prerequisites', CoursePrerequisiteController::class);
 
-        // مراجعة تقييمات الطلاب (قراءة فقط)
-        Route::apiResource('assessments', AssessmentController::class)
-            ->only(['index', 'show']);
+        Route::get('course-instructors', [CourseInstructorController::class, 'index']);
+        Route::post('course-instructors', [CourseInstructorController::class, 'store']);
+        Route::delete('course-instructors/{course}/{user}', [CourseInstructorController::class, 'destroy'])
+            ->whereNumber(['course', 'user']);
 
-        // إنشاء أسئلة
-        Route::apiResource('questions',      QuestionController::class);
-        Route::apiResource('answer-options', AnswerOptionController::class);
+        Route::get('course-organizations', [CourseOrganizationController::class, 'index']);
+        Route::post('course-organizations', [CourseOrganizationController::class, 'store']);
+        Route::delete('course-organizations/{course}/{organization}', [CourseOrganizationController::class, 'destroy'])
+            ->whereNumber(['course', 'organization']);
 
-        // تقييمات الكورس (قراءة فقط)
-        Route::apiResource('course-reviews', CourseReviewController::class)
-            ->only(['index', 'show']);
+        Route::get('course-skills', [CourseSkillController::class, 'index']);
+        Route::post('course-skills', [CourseSkillController::class, 'store']);
+        Route::delete('course-skills/{course}/{skill}', [CourseSkillController::class, 'destroy'])
+            ->whereNumber(['course', 'skill']);
+
+        Route::apiResource('course-reviews', CourseReviewController::class)->only(['index', 'show']);
     });
 
-    /*
-    |----------------------------------------------------------------------
-    | 🛡️ ADMIN ROUTES — دور admin
-    |----------------------------------------------------------------------
-    */
     Route::middleware('role:admin')->group(function () {
-
-        // إدارة المستخدمين
+        Route::get('admin/dashboard', [AdminDashboardController::class, 'index']);
         Route::apiResource('users', UserController::class);
+        Route::apiResource('student-profiles', StudentProfileController::class)->only(['index', 'store', 'destroy']);
+        Route::apiResource('instructor-profiles', InstructorProfileController::class)->only(['index', 'store', 'destroy']);
 
-        // Profiles
-        Route::apiResource('student-profiles',    StudentProfileController::class);
-        Route::apiResource('instructor-profiles', InstructorProfileController::class);
-
-        // Lookup Tables
-        Route::apiResource('course-levels',  CourseLevelController::class);
-        Route::apiResource('course-types',   CourseTypeController::class);
-        Route::apiResource('organizations',  OrganizationController::class);
-        Route::apiResource('domains',        DomainController::class)->only(['store', 'update', 'destroy']);
-        Route::apiResource('categories',     CategoryController::class)->only(['store', 'update', 'destroy']);
-        Route::apiResource('skills',         SkillController::class)->only(['store', 'update', 'destroy']);
+        Route::apiResource('course-levels', CourseLevelController::class)->only(['store', 'update', 'destroy']);
+        Route::apiResource('course-types', CourseTypeController::class)->only(['store', 'update', 'destroy']);
+        Route::apiResource('organizations', OrganizationController::class)->only(['store', 'update', 'destroy']);
+        Route::apiResource('domains', DomainController::class)->only(['store', 'update', 'destroy']);
+        Route::apiResource('categories', CategoryController::class)->only(['store', 'update', 'destroy']);
+        Route::apiResource('skills', SkillController::class)->only(['store', 'update', 'destroy']);
         Route::apiResource('syllabus-types', SyllabusTypeController::class)->only(['store', 'update', 'destroy']);
 
-        // Course relations
-        Route::apiResource('course-instructors',   CourseInstructorController::class);
-        Route::apiResource('course-organizations', CourseOrganizationController::class);
+        Route::post('student-skill-matrices', [StudentSkillMatrixController::class, 'store']);
+        Route::get('admin/student-skill-matrices', [StudentSkillMatrixController::class, 'index']);
+        Route::put('admin/student-skill-matrices/{user}/{skill}', [StudentSkillMatrixController::class, 'update'])
+            ->whereNumber(['user', 'skill']);
+        Route::delete('admin/student-skill-matrices/{user}/{skill}', [StudentSkillMatrixController::class, 'destroy'])
+            ->whereNumber(['user', 'skill']);
 
-        // Assessments & Questions (كامل)
-        Route::apiResource('assessments',    AssessmentController::class);
-        Route::apiResource('questions',      QuestionController::class);
-        Route::apiResource('answer-options', AnswerOptionController::class);
-
-        // Aptitude Score Mappings
-        Route::apiResource('aptitude-score-mappings', AptitudeScoreMappingController::class);
-
-        // Student Skill Matrices
-        Route::apiResource('student-skill-matrices', StudentSkillMatrixController::class);
-
-        // Recommendation Logs (قراءة + حذف)
-        Route::apiResource('recommendation-logs', RecommendationLogController::class)
-            ->only(['index', 'show', 'destroy']);
-
-        // Test Attempts (كامل الصلاحيات)
-        Route::apiResource('user-test-attempts', UserTestAttemptController::class);
-        Route::apiResource('user-answers',        UserAnswerController::class);
-
-        // AI Quiz
-        Route::post('/ai-quiz/generate', [AIQuizController::class, 'generate']);
-
-        // Certificates
-        Route::apiResource('certificates', CertificateController::class);
-
-        // Notifications (كامل)
-        Route::apiResource('notifications', NotificationController::class);
-    });
-
-    /*
-    |----------------------------------------------------------------------
-    | 🔄 SHARED — instructor|admin معاً
-    |----------------------------------------------------------------------
-    */
-    Route::middleware('role:instructor|admin')->group(function () {
-
-        // Syllabus (المدرس والأدمن يقدرون يشوفوا)
-        Route::apiResource('syllabi', SyllabusController::class)->only(['index', 'show']);
+        Route::delete('recommendation-logs/{recommendation_log}', [RecommendationLogController::class, 'destroy']);
+        Route::apiResource('certificates', CertificateController::class)->only(['store', 'update', 'destroy']);
+        Route::apiResource('notifications', NotificationController::class)->only(['store', 'destroy']);
     });
 });

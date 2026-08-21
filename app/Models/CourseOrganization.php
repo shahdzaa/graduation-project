@@ -9,6 +9,8 @@ class CourseOrganization extends Model
 {
     protected $fillable = ['course_id', 'organization_id'];
     public $timestamps = false;
+    public $incrementing = false;
+    protected $primaryKey = null;
 
     public function course(): BelongsTo
     {

@@ -14,9 +14,10 @@ class PlacementTestService
     public function storeGeneratedTest(int $userId, string $category, array $questions): array
     {
         return DB::transaction(function () use ($userId, $category, $questions) {
-
             $batchId = (string) Str::uuid();
-            $questionsForStudent = [];
+            $questionModels = [];
+            $optionRows = [];
+            $now = now();
 
             foreach ($questions as $q) {
                 $question = PlacementQuestion::create([
@@ -29,29 +30,44 @@ class PlacementTestService
                     'generation_batch_id' => $batchId,
                 ]);
 
-                $optionIds = [];
                 foreach ($q['options'] as $key => $text) {
-                    $option = PlacementAnswerOption::create([
+                    $optionRows[] = [
                         'placement_question_id' => $question->id,
                         'option_key'            => $key,
                         'option_text'           => $text,
                         'is_correct'            => ($key === $q['correct_answer']),
-                    ]);
-                    $optionIds[$key] = $option->id;
+                        'created_at'            => $now,
+                        'updated_at'            => $now,
+                    ];
                 }
 
+                $questionModels[$question->id] = $question;
+            }
+
+            DB::table('placement_answer_options')->insert($optionRows);
+
+            $optionsByQuestion = PlacementAnswerOption::query()
+                ->whereIn('placement_question_id', array_keys($questionModels))
+                ->select(['id', 'placement_question_id', 'option_key', 'option_text'])
+                ->orderBy('placement_question_id')
+                ->orderBy('option_key')
+                ->get()
+                ->groupBy('placement_question_id');
+
+            $questionsForStudent = [];
+            foreach ($questionModels as $question) {
                 $questionsForStudent[] = [
-                    'question_id'      => $question->id,
-                    'question_number'  => $question->question_number,
-                    'question_text'    => $question->question_text,
+                    'question_id' => $question->id,
+                    'question_number' => $question->question_number,
+                    'question_text' => $question->question_text,
                     'difficulty_level' => $question->difficulty_level,
-                    'options'          => collect($q['options'])->map(
-                        fn($text, $key) => [
-                            'option_id'   => $optionIds[$key],
-                            'option_key'  => $key,
-                            'option_text' => $text,
-                        ]
-                    )->values(),
+                    'options' => $optionsByQuestion->get($question->id, collect())
+                        ->map(fn ($option) => [
+                            'option_id' => $option->id,
+                            'option_key' => $option->option_key,
+                            'option_text' => $option->option_text,
+                        ])
+                        ->values(),
                 ];
             }
 
@@ -72,8 +88,7 @@ class PlacementTestService
     public function submitAnswers(int $attemptId, array $answers): array
     {
         return DB::transaction(function () use ($attemptId, $answers) {
-
-            $attempt = PlacementAttempt::findOrFail($attemptId);
+            $attempt = PlacementAttempt::query()->lockForUpdate()->findOrFail($attemptId);
 
             if ($attempt->status === 'completed') {
                 return [
@@ -83,38 +98,66 @@ class PlacementTestService
                 ];
             }
 
-            foreach ($answers as $answer) {
-                $valid = PlacementAnswerOption::where('id', $answer['selected_option_id'])
-                    ->where('placement_question_id', $answer['question_id'])
-                    ->exists();
+            $questionIds = array_values(array_unique(array_column($answers, 'question_id')));
+            $optionIds = array_values(array_unique(array_column($answers, 'selected_option_id')));
 
-                if (! $valid) {
+            $allowedQuestionIds = PlacementQuestion::query()
+                ->where('generation_batch_id', $attempt->generation_batch_id)
+                ->whereIn('id', $questionIds)
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+
+            $allowedQuestions = array_fill_keys($allowedQuestionIds, true);
+            $options = PlacementAnswerOption::query()
+                ->whereIn('id', $optionIds)
+                ->select(['id', 'placement_question_id'])
+                ->get()
+                ->keyBy('id');
+
+            $rows = [];
+            $now = now();
+            foreach ($answers as $answer) {
+                $questionId = (int) $answer['question_id'];
+                $optionId = (int) $answer['selected_option_id'];
+                $option = $options->get($optionId);
+
+                if (! isset($allowedQuestions[$questionId]) || ! $option || (int) $option->placement_question_id !== $questionId) {
                     throw new \InvalidArgumentException(
-                        "Option {$answer['selected_option_id']} لا تنتمي للسؤال {$answer['question_id']}"
+                        "Option {$optionId} لا تنتمي للسؤال {$questionId} أو للمحاولة الحالية"
                     );
                 }
 
-                PlacementUserAnswer::updateOrCreate(
-                    [
-                        'attempt_id'            => $attemptId,
-                        'placement_question_id' => $answer['question_id'],
-                    ],
-                    ['selected_option_id' => $answer['selected_option_id']]
-                );
+                $rows[] = [
+                    'attempt_id' => $attemptId,
+                    'placement_question_id' => $questionId,
+                    'selected_option_id' => $optionId,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
             }
 
-            $userAnswers = PlacementUserAnswer::where('attempt_id', $attemptId)
-                ->with(['selectedOption', 'question'])
+            PlacementUserAnswer::upsert(
+                $rows,
+                ['attempt_id', 'placement_question_id'],
+                ['selected_option_id', 'updated_at']
+            );
+
+            $userAnswers = DB::table('placement_user_answers')
+                ->join('placement_answer_options', 'placement_answer_options.id', '=', 'placement_user_answers.selected_option_id')
+                ->join('placement_questions', 'placement_questions.id', '=', 'placement_user_answers.placement_question_id')
+                ->where('placement_user_answers.attempt_id', $attemptId)
+                ->select(['placement_answer_options.is_correct', 'placement_questions.syllabus_topic'])
                 ->get();
 
-            $score        = 0;
+            $score = 0;
             $knownSyllabi = [];
 
-            foreach ($userAnswers as $ua) {
-                if ($ua->selectedOption->is_correct) {
+            foreach ($userAnswers as $answer) {
+                if ($answer->is_correct) {
                     $score++;
-                    $syllabus = $ua->question->syllabus_topic;
-                    if ($syllabus && ! in_array($syllabus, $knownSyllabi)) {
+                    $syllabus = $answer->syllabus_topic;
+                    if ($syllabus && ! in_array($syllabus, $knownSyllabi, true)) {
                         $knownSyllabi[] = $syllabus;
                     }
                 }

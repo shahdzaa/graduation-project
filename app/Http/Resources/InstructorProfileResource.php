@@ -18,6 +18,7 @@ public function toArray(Request $request): array
         'website_url'      => $this->website_url,
         'years_experience' => $this->years_experience,
         'average_rating'   => $this->average_rating,
+        'courses_count'    => $this->whenCounted('courses'),
         'user'             => new UserResource($this->whenLoaded('user')),
         'courses'          => CourseResource::collection($this->whenLoaded('courses')),
     ];

@@ -17,7 +17,7 @@ class Category extends Model
 
     public function children(): HasMany
     {
-        return $this->hasMany(Category::class, 'parent_id');
+        return $this->hasMany(Category::class, 'parent_id')->orderBy('order_index');
     }
 
     public function domain(): BelongsTo
@@ -25,8 +25,8 @@ class Category extends Model
         return $this->belongsTo(Domain::class);
     }
 
-    public function courses(): HasMany
+    public function syllabi(): HasMany
     {
-        return $this->hasMany(Course::class);
+        return $this->hasMany(Syllabus::class)->orderBy('module_id')->orderBy('order_index');
     }
 }

@@ -15,11 +15,6 @@ class Skill extends Model
         return $this->belongsToMany(Course::class, 'course_skills');
     }
 
-    public function aptitudeMappings(): HasMany
-    {
-        return $this->hasMany(AptitudeScoreMapping::class);
-    }
-
     public function studentSkillMatrices(): HasMany
     {
         return $this->hasMany(StudentSkillMatrix::class);
